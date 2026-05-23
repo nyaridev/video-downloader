@@ -1,5 +1,49 @@
 const OPEN_CLASS = "open";
+const DROP_UP_CLASS = "custom-select--drop-up";
+const MENU_GAP = 4;
+const MENU_MAX_HEIGHT = 220;
 let openPicker = null;
+
+function getPlacementBounds(trigger) {
+  let node = trigger.parentElement;
+  while (node && node !== document.documentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (overflowY === "auto" || overflowY === "scroll") {
+      return node.getBoundingClientRect();
+    }
+    node = node.parentElement;
+  }
+  return {
+    top: 0,
+    bottom: window.innerHeight,
+    left: 0,
+    right: window.innerWidth,
+  };
+}
+
+function getMenuNeededHeight(menu) {
+  return Math.min(menu.scrollHeight, MENU_MAX_HEIGHT);
+}
+
+function shouldDropUp(trigger, menu) {
+  const triggerRect = trigger.getBoundingClientRect();
+  const bounds = getPlacementBounds(trigger);
+  const neededHeight = getMenuNeededHeight(menu);
+  const spaceBelow = bounds.bottom - triggerRect.bottom - MENU_GAP;
+  const spaceAbove = triggerRect.top - bounds.top - MENU_GAP;
+
+  if (spaceBelow >= neededHeight) return false;
+  if (spaceAbove >= neededHeight) return true;
+  return false;
+}
+
+function updateMenuPlacement(wrap) {
+  const trigger = wrap.querySelector(".custom-select-trigger");
+  const menu = wrap.querySelector(".custom-select-menu");
+  if (!trigger || !menu) return;
+
+  wrap.classList.toggle(DROP_UP_CLASS, shouldDropUp(trigger, menu));
+}
 
 function closePicker(wrap) {
   if (!wrap) return;
@@ -34,8 +78,11 @@ function openPickerMenu(wrap) {
 
   if (openPicker && openPicker !== wrap) closePicker(openPicker);
 
-  wrap.classList.add(OPEN_CLASS);
   menu.hidden = false;
+  menu.style.visibility = "hidden";
+  updateMenuPlacement(wrap);
+  menu.style.visibility = "";
+  wrap.classList.add(OPEN_CLASS);
   trigger.setAttribute("aria-expanded", "true");
   openPicker = wrap;
 }
