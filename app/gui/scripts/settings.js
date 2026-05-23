@@ -1,10 +1,33 @@
+import { normalizeOutputPath } from "./paths.js";
+import { syncCustomSelect } from "./custom-select.js";
 import { apiCall } from "./api.js";
 import { $ } from "./dom.js";
 import { getConcurrency, setConcurrency } from "./format.js";
 import { log } from "./logger.js";
 import { DOWNLOAD_SETTING_IDS, state } from "./state.js";
+import { applyTheme, readThemeFromForm, setThemeSelectValue } from "./theme.js";
 
 let saveTimer = null;
+
+function bindEditablePathField(input, { onNormalized } = {}) {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    onNormalized?.(input.value, { live: true });
+    scheduleSaveSettings();
+  });
+  input.addEventListener("blur", () => {
+    input.value = normalizeOutputPath(input.value);
+    onNormalized?.(input.value, { live: false });
+    scheduleSaveSettings();
+  });
+}
+
+export function syncCookiesFileMode(pathValue) {
+  const hasPath = Boolean(normalizeOutputPath(pathValue));
+  if (!hasPath) return;
+  $("chkBrowserCookies").checked = false;
+  $("cookieBrowser").disabled = true;
+}
 
 function readSaveLayout() {
   const selected = document.querySelector('input[name="layout"]:checked');
@@ -12,6 +35,8 @@ function readSaveLayout() {
 }
 
 export function applySettingsDefaults(defaults) {
+  setThemeSelectValue(defaults.theme);
+  applyTheme(defaults.theme);
   $("chkFrameless").checked = defaults.frameless !== false;
   $("chkRemoveIfCancelled").checked = defaults.remove_if_cancelled !== false;
   $("bundleFolderTemplate").value = defaults.bundle_folder_template || "{title}_{id}";
@@ -29,6 +54,8 @@ export function applyDownloadDefaults(defaults) {
   $("chkThumb").checked = defaults.want_thumbnail !== false;
   $("videoQuality").value = defaults.video_quality || "Best";
   $("audioQuality").value = defaults.audio_quality || "Best";
+  syncCustomSelect($("videoQuality"));
+  syncCustomSelect($("audioQuality"));
   $("chkBundle").checked = defaults.bundle !== false;
   $("chkGroupPlaylistChannel").checked = defaults.group_playlist_channel !== false;
   $("chkCombine").checked = defaults.combine_streams !== false;
@@ -42,7 +69,8 @@ export function readSettingsFromForm() {
   return {
     use_browser_cookies: $("chkBrowserCookies").checked,
     cookies_browser: $("cookieBrowser").value,
-    cookies_file: $("cookiesFile").value,
+    cookies_file: normalizeOutputPath($("cookiesFile").value),
+    theme: readThemeFromForm(),
     frameless: $("chkFrameless").checked,
     remove_if_cancelled: $("chkRemoveIfCancelled").checked,
     bundle_folder_template: $("bundleFolderTemplate").value.trim(),
@@ -57,7 +85,7 @@ export function readSettingsFromForm() {
     want_thumbnail: $("chkThumb").checked,
     video_quality: $("videoQuality").value,
     audio_quality: $("audioQuality").value,
-    output_dir: $("outputDir").value,
+    output_dir: normalizeOutputPath($("outputDir").value),
     bundle: $("chkBundle").checked,
     group_playlist_channel: $("chkGroupPlaylistChannel").checked,
     combine_streams: $("chkCombine").checked,
@@ -95,7 +123,7 @@ export function readConfig() {
     want_thumbnail: $("chkThumb").checked,
     video_quality: $("videoQuality").value,
     audio_quality: $("audioQuality").value,
-    output_dir: $("outputDir").value,
+    output_dir: normalizeOutputPath($("outputDir").value),
     bundle: $("chkBundle").checked,
     group_playlist_channel: $("chkGroupPlaylistChannel").checked,
     save_layout: readSaveLayout(),
@@ -110,5 +138,16 @@ export function bindDownloadSettingsAutosave() {
     const evt = el.type === "checkbox" || el.type === "radio" ? "change" : "input";
     el.addEventListener(evt, scheduleSaveSettings);
   });
-  $("outputDir").addEventListener("change", scheduleSaveSettings);
+
+  bindEditablePathField($("outputDir"), {
+    onNormalized: (value) => {
+      state.outputDir = value;
+    },
+  });
+
+  bindEditablePathField($("cookiesFile"), {
+    onNormalized: (value, { live } = {}) => {
+      if (!live) syncCookiesFileMode(value);
+    },
+  });
 }

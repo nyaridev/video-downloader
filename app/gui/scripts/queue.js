@@ -1,3 +1,4 @@
+import { closeCustomSelect, toggleCustomSelect } from "./custom-select.js";
 import { apiCall } from "./api.js";
 import { $ } from "./dom.js";
 import {
@@ -251,32 +252,13 @@ function queueViewLabel(view) {
 
 export function closeQueueViewMenu() {
   const picker = $("queueViewPicker");
-  const menu = $("queueViewMenu");
-  const trigger = $("queueViewTrigger");
-  if (!picker || !menu || !trigger) return;
-  picker.classList.remove("open");
-  menu.hidden = true;
-  trigger.setAttribute("aria-expanded", "false");
-}
-
-function openQueueViewMenu() {
-  const picker = $("queueViewPicker");
-  const menu = $("queueViewMenu");
-  const trigger = $("queueViewTrigger");
-  if (!picker || !menu || !trigger || picker.hidden) return;
-  picker.classList.add("open");
-  menu.hidden = false;
-  trigger.setAttribute("aria-expanded", "true");
+  if (!picker) return;
+  closeCustomSelect(picker);
 }
 
 export function toggleQueueViewMenu() {
   const picker = $("queueViewPicker");
-  if (!picker || picker.hidden) return;
-  if (picker.classList.contains("open")) {
-    closeQueueViewMenu();
-  } else {
-    openQueueViewMenu();
-  }
+  toggleCustomSelect(picker);
 }
 
 function syncQueueViewTriggerLabel() {
@@ -302,7 +284,7 @@ function updateQueueViewPicker() {
   menu.innerHTML = "";
   state.views.forEach((view) => {
     const li = document.createElement("li");
-    li.className = "queue-view-option";
+    li.className = "custom-select-option";
     li.dataset.viewId = view.id;
     li.setAttribute("role", "option");
     if (view.id === activeId) {
@@ -312,14 +294,14 @@ function updateQueueViewPicker() {
 
     const selectBtn = document.createElement("button");
     selectBtn.type = "button";
-    selectBtn.className = "queue-view-option-btn";
+    selectBtn.className = "custom-select-option-btn";
     selectBtn.textContent = queueViewLabel(view);
     li.appendChild(selectBtn);
 
     if (view.kind !== "main") {
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "queue-view-option-remove";
+      removeBtn.className = "custom-select-option-remove";
       removeBtn.setAttribute("aria-label", `Remove ${queueViewLabel(view)}`);
       removeBtn.title = "Remove this queue view";
       removeBtn.textContent = "×";

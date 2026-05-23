@@ -6,11 +6,6 @@ body:not(.frameless) .win-titlebar {
   display: none;
 }
 
-body:not(.frameless) .tab-strip {
-  border-radius: var(--radius) var(--radius) 0 0;
-  margin-top: 0;
-}
-
 .win-titlebar {
   display: none;
   align-items: center;
@@ -60,28 +55,30 @@ body:not(.frameless) .tab-strip {
 }
 
 .win-btn.win-close:hover {
-  background: #c42b1c;
-  color: #fff;
+  background: var(--win-close-hover);
+  color: var(--on-accent);
 }
 
 .tab-strip {
   display: flex;
   flex-shrink: 0;
   width: 100%;
+  box-sizing: border-box;
   gap: 0;
-  padding: 0 10px;
-  height: 34px;
-  align-items: flex-end;
-  background: var(--tabstrip-bg);
-  border-bottom: 1px solid var(--border);
-}
-
-body.frameless .tab-strip {
-  border-bottom: 1px solid var(--frame-outline);
+  padding: 0 8px;
+  min-height: 36px;
+  align-items: stretch;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
 }
 
 .page-tab {
-  padding: 7px 16px 9px;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -98,9 +95,5 @@ body.frameless .tab-strip {
 .page-tab.active {
   color: var(--text);
   border-bottom-color: var(--accent);
-  background: var(--bg);
-}
-
-body.frameless .page-tab.active {
-  background: var(--bg);
+  background: var(--tab-active-bg);
 }

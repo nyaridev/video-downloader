@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Video Downloader</title>
-  <link rel="stylesheet" href="styles/main.css?v=2" />
+  <link rel="stylesheet" href="styles/main.css?v=3" />
+  <link id="themeStylesheet" rel="stylesheet" href="themes/Default/theme.css?v=1" />
   <style>
     .format-field-row {
       display: grid;
@@ -34,13 +35,12 @@
       </div>
     </header>
 
+    <div class="app-body">
     <nav class="tab-strip">
       <button type="button" class="page-tab active" data-page="download">Download</button>
       <button type="button" class="page-tab" data-page="settings">Settings</button>
       <button type="button" class="page-tab" data-page="extras">Extras</button>
     </nav>
-
-    <div class="app-body">
     <div class="workspace">
       <div class="main-pane">
         <div id="page-download" class="page-view download-view active">
@@ -53,8 +53,8 @@
             </div>
           </div>
           <div class="download-scroll">
-          <div class="settings-block">
-            <span class="label-inline">Items</span>
+          <section class="settings-section">
+            <h2 class="settings-section-title">Items</h2>
             <div class="toggle-grid">
               <label class="toggle-card" data-tip="Download the video as MP4. When audio is also enabled, both streams are merged into one file.">
                 <span class="pill-switch"><input type="checkbox" id="chkVideo" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
@@ -79,13 +79,16 @@
               <label class="field-compact" for="audioQuality">Audio</label>
               <select id="audioQuality" class="select-compact"></select>
             </div>
-          </div>
-          <div class="settings-block">
+          </section>
+          <section class="settings-section">
+            <h2 class="settings-section-title">Output</h2>
             <div class="row">
-              <span class="label-inline">Output</span>
-              <input id="outputDir" type="text" class="path-input" readonly />
+              <input id="outputDir" type="text" class="path-input" spellcheck="false" placeholder="Output folder path" />
               <button type="button" id="browseBtn" class="btn-sm">Browse</button>
             </div>
+          </section>
+          <section class="settings-section">
+            <h2 class="settings-section-title">Organization</h2>
             <div class="option-group">
               <span class="option-group-label">Files</span>
               <div class="toggle-grid toggle-grid--compact">
@@ -120,56 +123,85 @@
                 </label>
               </div>
             </div>
-            <div class="option-group option-group--concurrency">
-              <div class="concurrency-head">
-                <span class="option-group-label">Concurrent downloads</span>
+          </section>
+          <section class="settings-section">
+            <h2 class="settings-section-title">Concurrent downloads</h2>
+            <div class="concurrency-head">
+              <span class="option-group-label">Parallel jobs</span>
+              <div class="number-input">
                 <input
                   type="number"
                   id="concurrencyInput"
-                  class="concurrency-input"
+                  class="number-input-field concurrency-input"
                   min="1"
                   max="100"
                   step="1"
                   value="8"
                   aria-label="Concurrent downloads"
                 />
+                <div class="number-input-spin">
+                  <button
+                    type="button"
+                    class="number-input-btn number-input-up"
+                    aria-label="Increase concurrent downloads"
+                  >
+                    <span class="number-input-arrow number-input-arrow--up" aria-hidden="true"></span>
+                  </button>
+                  <button
+                    type="button"
+                    class="number-input-btn number-input-down"
+                    aria-label="Decrease concurrent downloads"
+                  >
+                    <span class="number-input-arrow number-input-arrow--down" aria-hidden="true"></span>
+                  </button>
+                </div>
               </div>
-              <input
-                type="range"
-                id="concurrencySlider"
-                class="concurrency-slider"
-                min="1"
-                max="100"
-                step="1"
-                value="8"
-                data-tip="How many queue items download at once. Applies when you click Download, not while a batch is running."
-              />
-              <p class="hint">1 = one at a time, 100 = maximum parallel. Takes effect on the next Download click.</p>
             </div>
-          </div>
+            <input
+              type="range"
+              id="concurrencySlider"
+              class="concurrency-slider"
+              min="1"
+              max="100"
+              step="1"
+              value="8"
+              data-tip="How many queue items download at once. Applies when you click Download, not while a batch is running."
+            />
+            <p class="hint">1 = one at a time, 100 = maximum parallel. Takes effect on the next Download click.</p>
+          </section>
           </div>
         </div>
-
         <div id="page-settings" class="page-view settings-view">
           <div class="settings-scroll">
-            <div class="settings-block no-border">
-              <span class="label-inline">Window</span>
+            <section class="settings-section">
+              <h2 class="settings-section-title">Appearance</h2>
+              <div class="row theme-row">
+                <span class="label-inline">Theme</span>
+                <select id="themeSelect" class="select-compact theme-select" aria-label="Theme">
+                  <option value="default">Default</option>
+                  <option value="meta">Meta</option>
+                </select>
+              </div>
+              <p class="hint">Applies immediately. Saved with your other settings.</p>
+            </section>
+            <section class="settings-section">
+              <h2 class="settings-section-title">Window</h2>
               <label class="toggle-card" data-tip="Hide the system title bar and use the app's own minimize, maximize, and close buttons. Requires restart.">
                 <span class="pill-switch"><input type="checkbox" id="chkFrameless" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
                 <span class="toggle-label">Frameless window</span>
               </label>
               <p class="hint">Requires restart. Hides the system title bar and uses custom window buttons.</p>
-            </div>
-            <div class="settings-block">
-              <span class="label-inline">Downloads</span>
+            </section>
+            <section class="settings-section">
+              <h2 class="settings-section-title">Downloads</h2>
               <label class="toggle-card" data-tip="When a queue item is cancelled while downloading, delete everything written for that task — metadata, thumbnail, audio, video, and partial files. With Bundle enabled, the whole task folder is removed.">
                 <span class="pill-switch"><input type="checkbox" id="chkRemoveIfCancelled" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
                 <span class="toggle-label">Remove files if cancelled</span>
               </label>
               <p class="hint">Removes all parts of the cancelled task. Bundled downloads delete the entire task folder.</p>
-            </div>
-            <div class="settings-block">
-              <span class="label-inline">File naming</span>
+            </section>
+            <section class="settings-section">
+              <h2 class="settings-section-title">File naming</h2>
               <div class="format-field">
                 <label class="format-field-label" for="bundleFolderTemplate">Bundle folder</label>
                 <input id="bundleFolderTemplate" type="text" class="path-input format-input" spellcheck="false" />
@@ -198,22 +230,25 @@
                   <input id="playlistNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
                 </div>
               </div>
-              <p class="hint format-legend">
-                File name placeholders: <code>{title}</code> video title,
-                <code>{id}</code> video ID,
-                <code>{channel}</code> channel name,
-                <code>{upload_date}</code> upload date (YYYYMMDD),
-                <code>{playlist}</code> playlist title.
-                Playlist name placeholders: <code>{playlist}</code>, <code>{playlist_id}</code>, <code>{id}</code> (playlist ID).
-                Channel name placeholders: <code>{channel}</code>, <code>{channel_id}</code>, <code>{id}</code> (channel ID).
-                Channel and playlist folder names set the Organized layout category folders.
-                Channel and playlist name templates always apply under those folders in Organized layout.
-                With Flat layout, name templates apply when Group playlist/channel is enabled.
-                Metadata is saved as the file name plus <code>.meta.json</code>.
-              </p>
-            </div>
-            <div class="settings-block">
-              <span class="label-inline">YouTube</span>
+              <details class="settings-disclosure">
+                <summary class="settings-disclosure-trigger">Name placeholders</summary>
+                <p class="hint format-legend settings-disclosure-body">
+                  File name placeholders: <code>{title}</code> video title,
+                  <code>{id}</code> video ID,
+                  <code>{channel}</code> channel name,
+                  <code>{upload_date}</code> upload date (YYYYMMDD),
+                  <code>{playlist}</code> playlist title.
+                  Playlist name placeholders: <code>{playlist}</code>, <code>{playlist_id}</code>, <code>{id}</code> (playlist ID).
+                  Channel name placeholders: <code>{channel}</code>, <code>{channel_id}</code>, <code>{id}</code> (channel ID).
+                  Channel and playlist folder names set the Organized layout category folders.
+                  Channel and playlist name templates always apply under those folders in Organized layout.
+                  With Flat layout, name templates apply when Group playlist/channel is enabled.
+                  Metadata is saved as the file name plus <code>.meta.json</code>.
+                </p>
+              </details>
+            </section>
+            <section class="settings-section">
+              <h2 class="settings-section-title">YouTube</h2>
               <p class="hint">Sign in if downloads fail with a bot check.
                 <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>
               </p>
@@ -226,10 +261,10 @@
                 <button type="button" id="signInBtn" class="btn-sm">Sign in</button>
               </div>
               <div class="row">
-                <input id="cookiesFile" type="text" class="path-input" readonly placeholder="Optional cookies.txt" />
+                <input id="cookiesFile" type="text" class="path-input" spellcheck="false" placeholder="Optional cookies.txt path" />
                 <button type="button" id="browseCookiesBtn" class="btn-sm">File</button>
               </div>
-            </div>
+            </section>
           </div>
           <div class="settings-actions settings-actions--row">
             <button type="button" id="saveSettingsBtn" class="action-btn">Save Settings</button>
@@ -239,8 +274,8 @@
 
         <div id="page-extras" class="page-view settings-view">
           <div class="settings-scroll">
-            <div class="settings-block no-border">
-              <span class="label-inline">YouTube runtime</span>
+            <section class="settings-section">
+              <h2 class="settings-section-title">YouTube runtime</h2>
               <p class="hint">Deno lets yt-dlp solve YouTube challenges. PATH uses a system install; Local uses a copy in this app folder.</p>
               <div class="source-toggle">
                 <span id="denoSourcePathLabel" class="source-toggle-label active">PATH</span>
@@ -252,9 +287,9 @@
               </div>
               <button type="button" id="installDenoBtn" class="action-btn extras-action">Download Deno</button>
               <p id="denoStatusText" class="hint"></p>
-            </div>
-            <div class="settings-block">
-              <span class="label-inline">Stream merging</span>
+            </section>
+            <section class="settings-section">
+              <h2 class="settings-section-title">Stream merging</h2>
               <p class="hint">ffmpeg merges separate video and audio streams into one MP4. PATH uses a system install; Local downloads into this app folder.</p>
               <div class="source-toggle">
                 <span id="ffmpegSourcePathLabel" class="source-toggle-label active">PATH</span>
@@ -266,7 +301,7 @@
               </div>
               <button type="button" id="installFfmpegBtn" class="action-btn extras-action">Download ffmpeg</button>
               <p id="ffmpegStatusText" class="hint"></p>
-            </div>
+            </section>
           </div>
         </div>
       </div>
@@ -286,19 +321,19 @@
         </div>
         <p id="overallProgressText" class="progress-text">Idle</p>
         <button type="button" id="retryAllBtn" class="retry-all-btn" hidden>Retry all failed downloads</button>
-        <div id="queueViewPicker" class="queue-view-picker" hidden>
+        <div id="queueViewPicker" class="custom-select custom-select--block custom-select--drop-up" data-queue-view-picker hidden>
           <button
             type="button"
             id="queueViewTrigger"
-            class="queue-view-trigger"
+            class="custom-select-trigger"
             aria-haspopup="listbox"
             aria-expanded="false"
             aria-controls="queueViewMenu"
           >
-            <span id="queueViewLabel" class="queue-view-trigger-label">Main</span>
-            <span class="queue-view-trigger-chevron" aria-hidden="true"></span>
+            <span id="queueViewLabel" class="custom-select-label">Main</span>
+            <span class="custom-select-chevron" aria-hidden="true"></span>
           </button>
-          <ul id="queueViewMenu" class="queue-view-menu" role="listbox" hidden></ul>
+          <ul id="queueViewMenu" class="custom-select-menu" role="listbox" hidden></ul>
         </div>
         <button type="button" id="downloadBtn" class="download-btn">Download</button>
       </aside>

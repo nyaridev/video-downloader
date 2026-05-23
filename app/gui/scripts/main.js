@@ -20,8 +20,12 @@ import {
   readConfig,
   saveAppSettings,
   scheduleSaveSettings,
+  syncCookiesFileMode,
 } from "./settings.js";
 import { MAIN_VIEW_ID, state } from "./state.js";
+import { applyTheme } from "./theme.js";
+import { initCustomSelects, syncCustomSelect } from "./custom-select.js";
+import { initNumberInputs } from "./number-input.js";
 import { applyFramelessUi, bindHoverTips, setMode, setPage } from "./ui.js";
 
 window.dispatchBackend = function (payload) {
@@ -43,6 +47,8 @@ function init() {
 
   bindDownloadSettingsAutosave();
   bindHoverTips();
+  initNumberInputs();
+  initCustomSelects();
 
   $("winMin")?.addEventListener("click", () => apiCall("minimize_window"));
   $("winMax")?.addEventListener("click", () => apiCall("toggle_maximize_window"));
@@ -60,6 +66,7 @@ function init() {
       $("chkBrowserCookies").checked = defaults.use_browser_cookies !== false;
       $("cookieBrowser").disabled = !$("chkBrowserCookies").checked;
       $("cookiesFile").value = defaults.cookies_file || "";
+      syncCustomSelect($("cookieBrowser"));
       applySettingsDefaults(defaults);
       applyFramelessUi(defaults.frameless !== false);
       applyDownloadDefaults(defaults);
@@ -156,8 +163,8 @@ function init() {
   $("browseCookiesBtn").addEventListener("click", async () => {
     try {
       const path = await apiCall("browse_cookies_file");
-      $("cookiesFile").value = path || "";
-      if (path) $("chkBrowserCookies").checked = false;
+      $("cookiesFile").value = path ? normalizeOutputPath(path) : "";
+      syncCookiesFileMode($("cookiesFile").value);
       scheduleSaveSettings();
     } catch (err) {
       log("error", err.message);
@@ -171,6 +178,10 @@ function init() {
   });
 
   $("cookieBrowser").addEventListener("change", scheduleSaveSettings);
+  $("themeSelect").addEventListener("change", () => {
+    applyTheme($("themeSelect").value);
+    scheduleSaveSettings();
+  });
   $("chkFrameless").addEventListener("change", scheduleSaveSettings);
   $("chkRemoveIfCancelled").addEventListener("change", scheduleSaveSettings);
   $("bundleFolderTemplate").addEventListener("input", scheduleSaveSettings);
@@ -185,6 +196,7 @@ function init() {
       const path = await apiCall("browse_output_dir");
       $("outputDir").value = path;
       state.outputDir = path;
+      scheduleSaveSettings();
     } catch (err) {
       log("error", err.message);
     }
@@ -216,27 +228,19 @@ function init() {
   });
 
   $("queueViewMenu")?.addEventListener("click", (e) => {
-    const removeBtn = e.target.closest(".queue-view-option-remove");
+    const removeBtn = e.target.closest(".custom-select-option-remove");
     if (removeBtn) {
       e.stopPropagation();
-      const option = removeBtn.closest(".queue-view-option");
+      const option = removeBtn.closest(".custom-select-option");
       const viewId = option?.dataset.viewId;
       if (viewId) removeQueueView(viewId);
       return;
     }
-    const selectBtn = e.target.closest(".queue-view-option-btn");
+    const selectBtn = e.target.closest(".custom-select-option-btn");
     if (!selectBtn) return;
-    const option = selectBtn.closest(".queue-view-option");
+    const option = selectBtn.closest(".custom-select-option");
     const viewId = option?.dataset.viewId;
     if (viewId) setActiveView(viewId);
-  });
-
-  document.addEventListener("click", (e) => {
-    const picker = $("queueViewPicker");
-    if (!picker || picker.hidden || !picker.classList.contains("open")) return;
-    if (!picker.contains(e.target)) {
-      closeQueueViewMenu();
-    }
   });
 
   $("downloadBtn").addEventListener("click", async () => {

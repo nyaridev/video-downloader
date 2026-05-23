@@ -1,0 +1,238 @@
+.page-tab.active {
+  border-bottom-width: 3px;
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+.pill-switch input:focus + .pill-track,
+.pill-switch input:focus-visible + .pill-track {
+  box-shadow: none;
+  outline: none;
+}
+
+.toggle-card:has(.pill-switch):focus-within {
+  outline: none;
+  box-shadow: none;
+}
+
+.url-input,
+.path-input,
+.custom-select-trigger,
+.number-input {
+  background: var(--input-bg);
+}
+
+#page-download .custom-select-trigger,
+#page-download .path-input,
+#page-download .number-input {
+  background: #e4e6eb;
+  border-color: #ccd0d5;
+}
+
+.settings-section {
+  background: var(--card);
+}
+
+.settings-section .path-input,
+.settings-section .format-input,
+.settings-section .custom-select-trigger {
+  background: #e4e6eb;
+  border-color: #ccd0d5;
+}
+
+.settings-section .btn-sm {
+  background: #e4e6eb;
+  border-color: #ccd0d5;
+}
+
+.settings-section .btn-sm:hover {
+  background: var(--mode-idle);
+  border-color: #bcc0c4;
+}
+
+.settings-disclosure {
+  background: #f0f2f5;
+}
+
+.mode-btn.active {
+  box-shadow: 0 1px 2px rgba(24, 119, 242, 0.35);
+}
+
+.download-btn {
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: 0 1px 2px rgba(24, 119, 242, 0.25);
+}
+
+.action-btn {
+  border-radius: calc(var(--radius) + 2px);
+}
+
+/* Queue — card-style rows on the light Meta surface */
+.side-pane .queue-list {
+  gap: 8px;
+}
+
+.side-pane .queue-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-left-color: #bcc0c4;
+  padding: 10px 12px;
+}
+
+.side-pane .queue-item--empty,
+.side-pane .queue-item--queued {
+  background: var(--input-bg);
+}
+
+.side-pane .queue-item--preparing:not(.queue-item--cancelled) {
+  border-left-color: var(--accent);
+}
+
+.side-pane .queue-item--preparing .queue-status-badge {
+  background: var(--menu-active-bg);
+  color: var(--accent);
+}
+
+.side-pane .queue-item--running,
+.side-pane .queue-item--combining {
+  border-color: var(--border);
+  border-left-color: var(--accent);
+}
+
+.side-pane .queue-item--running .progress-bar,
+.side-pane .queue-item--combining .progress-bar {
+  background: var(--accent);
+}
+
+.side-pane .queue-item--running .queue-status-badge,
+.side-pane .queue-item--combining .queue-status-badge {
+  color: var(--accent);
+}
+
+.side-pane .queue-item--done {
+  border-color: var(--border);
+  border-left-color: var(--success);
+}
+
+.side-pane .queue-item--done .progress-bar {
+  background: var(--success);
+}
+
+.side-pane .queue-item--error {
+  border-color: var(--border);
+  border-left-color: var(--error);
+}
+
+.side-pane .queue-item--error .progress-bar {
+  background: var(--error);
+}
+
+.side-pane .queue-item--cancelled {
+  border-color: var(--border);
+  border-left-color: #ccd0d5;
+  opacity: 0.88;
+}
+
+.side-pane .queue-item--cancelled .progress-bar {
+  background: #bcc0c4;
+}
+
+.side-pane .queue-status-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mode-idle);
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+}
+
+.side-pane .queue-item--running .queue-status-badge,
+.side-pane .queue-item--combining .queue-status-badge {
+  background: var(--menu-active-bg);
+}
+
+.side-pane .queue-item--done .queue-status-badge {
+  background: rgba(49, 162, 76, 0.12);
+}
+
+.side-pane .queue-item--error .queue-status-badge {
+  background: var(--error-soft-bg);
+}
+
+.side-pane .queue-item--cancelled .queue-status-badge {
+  background: var(--mode-idle);
+}
+
+.side-pane .queue-item-head strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.side-pane .queue-item-url {
+  color: #65676b;
+}
+
+.side-pane .item-tag {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--mode-idle);
+  font-size: 0.64rem;
+}
+
+.side-pane .item-tag--active {
+  background: var(--menu-active-bg);
+  color: var(--accent);
+}
+
+.side-pane .item-tag--done {
+  background: rgba(49, 162, 76, 0.12);
+  border: none;
+  color: var(--success);
+}
+
+.side-pane .queue-item-retry,
+.side-pane .queue-item-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: var(--mode-idle);
+}
+
+.side-pane .queue-item-retry:hover {
+  background: var(--menu-active-bg);
+  border: none;
+}
+
+.side-pane .queue-item-close:hover {
+  background: var(--surface-hover);
+  border: none;
+}
+
+.side-pane .progress-wrap {
+  background: var(--input-bg);
+  border-radius: 999px;
+}
+
+.side-pane .progress-bar {
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.side-pane .progress-wrap--overall {
+  height: 6px;
+}
+
+.side-pane .custom-select-trigger {
+  background: var(--input-bg);
+  border-color: #ccd0d5;
+}
+
+.side-pane .custom-select-trigger:hover {
+  background: var(--mode-idle);
+}
+
+.side-pane .retry-all-btn {
+  border-radius: calc(var(--radius) + 2px);
+}

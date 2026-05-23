@@ -7,7 +7,7 @@ import threading
 from typing import Any
 
 from app.auth.browser import launch_for_youtube_signin
-from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, normalize_save_layout, save_settings
+from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, normalize_save_layout, normalize_theme, save_settings
 from app.utils.naming import (
     DEFAULT_BUNDLE_FOLDER_TEMPLATE,
     DEFAULT_CHANNEL_NAME_TEMPLATE,
@@ -16,7 +16,7 @@ from app.utils.naming import (
     normalize_name_template,
 )
 from app.gui.dialogs import pick_file, pick_folder
-from app.paths import DEFAULT_CHANNEL_FOLDER, DEFAULT_OUTPUT, DEFAULT_PLAYLIST_FOLDER, ROOT, ensure_output_root, normalize_layout_folder_name
+from app.paths import DEFAULT_CHANNEL_FOLDER, DEFAULT_OUTPUT, DEFAULT_PLAYLIST_FOLDER, ROOT, ensure_output_root, normalize_layout_folder_name, normalize_output_dir
 from app.queue import DownloadQueue
 from app.system.restart import restart_application
 from app.tools.deno import install_local_deno
@@ -37,7 +37,7 @@ class Api:
         self._queue = DownloadQueue(self._emit)
         self._maximized = False
         settings = load_settings()
-        saved_output = (settings.get("output_dir") or "").strip()
+        saved_output = normalize_output_dir(settings.get("output_dir"))
         self._output_dir = saved_output or str(ensure_output_root())
 
     def _emit(self, event: str, data: dict[str, Any]) -> None:
@@ -52,7 +52,7 @@ class Api:
 
     def get_defaults(self) -> dict[str, Any]:
         settings = load_settings()
-        output_dir = (settings.get("output_dir") or "").strip() or self._output_dir
+        output_dir = normalize_output_dir(settings.get("output_dir")) or self._output_dir
         self._output_dir = output_dir
         return {
             "root": str(ROOT),
@@ -64,6 +64,7 @@ class Api:
             "cookies_browser": settings["cookies_browser"],
             "cookies_file": settings["cookies_file"],
             "frameless": settings["frameless"],
+            "theme": settings["theme"],
             "want_video": settings["want_video"],
             "want_audio": settings["want_audio"],
             "want_metadata": settings["want_metadata"],
@@ -92,7 +93,7 @@ class Api:
 
         concurrency = normalize_concurrency(settings.get("concurrency", current["concurrency"]))
 
-        output_dir = (settings.get("output_dir") or "").strip()
+        output_dir = normalize_output_dir(settings.get("output_dir"))
         if output_dir:
             self._output_dir = output_dir
             ensure_output_root(output_dir)
@@ -102,6 +103,7 @@ class Api:
             "cookies_browser": browser,
             "cookies_file": (settings.get("cookies_file") or "").strip(),
             "frameless": bool(settings.get("frameless", True)),
+            "theme": normalize_theme(settings.get("theme", current.get("theme", "default"))),
             "want_video": bool(settings.get("want_video", True)),
             "want_audio": bool(settings.get("want_audio", True)),
             "want_metadata": bool(settings.get("want_metadata", True)),
@@ -203,6 +205,7 @@ class Api:
     def browse_output_dir(self) -> str:
         path = pick_folder(self._output_dir, DEFAULT_OUTPUT)
         if path:
+            path = normalize_output_dir(path)
             self._output_dir = path
             ensure_output_root(path)
             save_settings({"output_dir": path})
@@ -210,7 +213,8 @@ class Api:
 
     def enqueue_download(self, config: dict[str, Any]) -> dict[str, Any]:
         config = dict(config)
-        config["output_dir"] = config.get("output_dir") or self._output_dir
+        output_dir = normalize_output_dir(config.get("output_dir")) or self._output_dir
+        config["output_dir"] = output_dir
         settings = load_settings()
         config["cookie_settings"] = settings
         config["concurrency"] = normalize_concurrency(config.get("concurrency", settings["concurrency"]))

@@ -4,7 +4,7 @@
   border: none;
   border-radius: var(--radius);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -20,7 +20,7 @@
 }
 
 .action-btn.secondary-action:hover {
-  background: #44464e;
+  background: var(--surface-hover);
 }
 
 .action-btn.extras-action {
@@ -62,7 +62,7 @@
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--input-bg);
   color: var(--text);
   font-size: 0.95rem;
 }
@@ -91,12 +91,12 @@
 }
 
 .mode-btn:hover {
-  background: #44464e;
+  background: var(--surface-hover);
 }
 
 .mode-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .mode-btn.active:hover {
@@ -114,6 +114,25 @@
 .settings-block.no-border {
   border-top: none;
   padding-top: 0;
+}
+
+.theme-row {
+  align-items: center;
+}
+
+.theme-row .label-inline {
+  flex-shrink: 0;
+}
+
+.theme-row .theme-select {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+  margin-left: auto;
+}
+
+.theme-row .theme-select .custom-select-trigger {
+  width: 100%;
 }
 
 .row {
@@ -237,7 +256,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e8eaed;
+  background: var(--pill-knob);
   transition: transform 0.15s ease;
 }
 
@@ -260,7 +279,7 @@
   color: var(--text);
   font-size: 0.78rem;
   line-height: 1.4;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-tooltip);
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
@@ -308,22 +327,98 @@
   margin-bottom: 6px;
 }
 
-.concurrency-input {
-  width: 52px;
-  padding: 4px 6px;
+.number-input {
+  display: inline-flex;
+  align-items: stretch;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--input-bg);
+  overflow: hidden;
+}
+
+.number-input:focus-within {
+  border-color: var(--accent);
+}
+
+.number-input-field {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
   color: var(--text);
   font-size: 0.8rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
-.concurrency-input:focus {
+.number-input-field::-webkit-outer-spin-button,
+.number-input-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.number-input-field:focus {
   outline: none;
-  border-color: var(--accent);
+}
+
+.number-input-spin {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+}
+
+.number-input-btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  min-height: 14px;
+  padding: 0;
+  border: none;
+  background: var(--mode-idle);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.number-input-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.number-input-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.number-input-btn + .number-input-btn {
+  border-top: 1px solid var(--border);
+}
+
+.number-input-arrow {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+.number-input-arrow--up {
+  border-bottom: 5px solid currentColor;
+}
+
+.number-input-arrow--down {
+  border-top: 5px solid currentColor;
+}
+
+.concurrency-input {
+  width: 40px;
+  padding: 4px 4px;
 }
 
 .concurrency-slider {
@@ -340,25 +435,20 @@
   text-transform: uppercase;
 }
 
-.select-compact {
-  padding: 5px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.85rem;
-  min-width: 100px;
-}
-
 .path-input {
   flex: 1;
   min-width: 0;
   padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--input-bg);
   color: var(--text);
   font-size: 0.85rem;
+}
+
+#outputDir,
+#cookiesFile {
+  font-weight: 500;
 }
 
 .btn-sm {
@@ -374,7 +464,7 @@
 }
 
 .btn-sm:hover {
-  background: #44464e;
+  background: var(--surface-hover);
 }
 
 .hint {

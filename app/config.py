@@ -29,6 +29,7 @@ LEGACY_SETTINGS_FILE = ROOT / "settings.json"
 
 BROWSER_OPTIONS = ("edge", "firefox", "chrome", "brave", "chromium", "opera", "vivaldi")
 CHROMIUM_BROWSERS = frozenset({"chrome", "edge", "brave", "chromium", "opera", "vivaldi"})
+THEME_OPTIONS = ("default", "meta")
 
 _DEFAULT_BROWSER = "edge" if sys.platform == "win32" else "firefox"
 
@@ -37,6 +38,7 @@ DEFAULTS: dict[str, Any] = {
     "cookies_browser": _DEFAULT_BROWSER,
     "cookies_file": "",
     "frameless": True,
+    "theme": "default",
     "want_video": True,
     "want_audio": True,
     "want_metadata": True,
@@ -76,6 +78,11 @@ def normalize_save_layout(value: Any, *, organize: bool | None = None) -> str:
     if organize is True:
         return "organized"
     return "flat"
+
+
+def normalize_theme(value: Any) -> str:
+    theme = str(value or "default").strip().lower()
+    return theme if theme in THEME_OPTIONS else "default"
 
 
 def normalize_concurrency(value: Any) -> int:
@@ -120,6 +127,7 @@ def load_settings() -> dict[str, Any]:
     if data.get("cookies_browser") not in BROWSER_OPTIONS:
         data["cookies_browser"] = _DEFAULT_BROWSER
     data["frameless"] = bool(data.get("frameless", True))
+    data["theme"] = normalize_theme(data.get("theme"))
     data["use_browser_cookies"] = bool(data.get("use_browser_cookies", True))
     data["want_video"] = bool(data.get("want_video", True))
     data["want_audio"] = bool(data.get("want_audio", True))

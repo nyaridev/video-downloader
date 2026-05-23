@@ -79,8 +79,19 @@ def normalize_layout_folder_name(value: str | None, default: str) -> str:
     return cleaned or default
 
 
+def normalize_output_dir(value: str | None) -> str:
+    """Normalize a user-entered output directory path."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return str(Path(text).expanduser())
+
+
 def ensure_output_root(custom: str | None = None) -> Path:
-    root = Path(custom) if custom else DEFAULT_OUTPUT
+    if custom:
+        root = Path(custom).expanduser()
+    else:
+        root = DEFAULT_OUTPUT
     root.mkdir(parents=True, exist_ok=True)
     return root.resolve()
 
