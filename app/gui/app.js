@@ -112,7 +112,7 @@ function renderQueue(jobs) {
     list.appendChild(li);
     return;
   }
-  jobs.forEach((job) => {
+  [...jobs].reverse().forEach((job) => {
     const li = document.createElement("li");
     li.innerHTML = `<strong>${job.mode}</strong> — ${job.url}<br><span class="status">${job.status}</span>`;
     list.appendChild(li);
@@ -246,7 +246,7 @@ async function init() {
       if (!config.url) throw new Error("Enter a YouTube URL.");
       const res = await apiCall("enqueue_download", config);
       renderQueue(res.queue);
-      log("info", `Queued job ${res.job_id}`);
+      log("info", `Download queued (${res.job_id})`);
       $("url").value = "";
     } catch (err) {
       log("error", err.message);

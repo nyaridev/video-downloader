@@ -8,103 +8,88 @@
 </head>
 <body>
   <div class="app">
-    <header>
+    <header class="top-bar">
       <h1>Video Downloader</h1>
-      <p class="subtitle">YouTube video, playlist, and channel downloads</p>
     </header>
 
-    <section class="card">
-      <label class="label" for="url">YouTube URL</label>
-      <input id="url" type="text" placeholder="https://www.youtube.com/watch?v=..." />
+    <div class="workspace">
+      <div class="settings-pane">
+        <input id="url" type="text" class="url-input" placeholder="Paste YouTube URL..." />
 
-      <div class="mode-row" id="modeRow">
-        <button type="button" class="mode-btn active" data-mode="video">Video</button>
-        <button type="button" class="mode-btn" data-mode="playlist">Playlist</button>
-        <button type="button" class="mode-btn" data-mode="channel">Channel</button>
-      </div>
-    </section>
+        <div class="mode-row" id="modeRow">
+          <button type="button" class="mode-btn active" data-mode="video">Video</button>
+          <button type="button" class="mode-btn" data-mode="playlist">Playlist</button>
+          <button type="button" class="mode-btn" data-mode="channel">Channel</button>
+        </div>
 
-    <section class="card grid-2">
-      <div>
-        <p class="label">Download items</p>
-        <div class="checks">
-          <label><input type="checkbox" id="chkVideo" checked /> Video</label>
-          <label><input type="checkbox" id="chkAudio" checked /> Audio</label>
-          <label><input type="checkbox" id="chkMeta" checked /> Metadata</label>
-          <label><input type="checkbox" id="chkThumb" checked /> Thumbnail</label>
+        <div class="settings-block">
+          <div class="row wrap">
+            <span class="label-inline">Items</span>
+            <label class="chip"><input type="checkbox" id="chkVideo" checked /> Video</label>
+            <label class="chip"><input type="checkbox" id="chkAudio" checked /> Audio</label>
+            <label class="chip"><input type="checkbox" id="chkMeta" checked /> Metadata</label>
+            <label class="chip"><input type="checkbox" id="chkThumb" checked /> Thumbnail</label>
+          </div>
+          <div class="row">
+            <label class="field-compact" for="videoQuality">Video</label>
+            <select id="videoQuality" class="select-compact"></select>
+            <label class="field-compact" for="audioQuality">Audio</label>
+            <select id="audioQuality" class="select-compact"></select>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <div class="row">
+            <span class="label-inline">Output</span>
+            <input id="outputDir" type="text" class="path-input" readonly />
+            <button type="button" id="browseBtn" class="btn-sm">Browse</button>
+          </div>
+          <div class="row wrap">
+            <label class="chip"><input type="checkbox" id="chkBundle" checked /> Bundle</label>
+            <label class="chip"><input type="checkbox" id="chkCombine" checked /> Combine streams</label>
+            <label class="chip"><input type="radio" name="layout" id="layoutRaw" checked /> Flat</label>
+            <label class="chip"><input type="radio" name="layout" id="layoutOrg" /> Organized</label>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <p class="hint">YouTube sign-in if bot check fails.
+            <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>
+          </p>
+          <div class="row wrap">
+            <label class="chip"><input type="checkbox" id="chkBrowserCookies" checked /> Browser cookies</label>
+            <select id="cookieBrowser" class="select-compact"></select>
+            <button type="button" id="signInBtn" class="btn-sm">Sign in</button>
+            <button type="button" id="saveCookiesBtn" class="btn-sm">Save</button>
+          </div>
+          <div class="row">
+            <input id="cookiesFile" type="text" class="path-input" readonly placeholder="Optional cookies.txt" />
+            <button type="button" id="browseCookiesBtn" class="btn-sm">File</button>
+          </div>
         </div>
       </div>
-      <div class="quality-col">
-        <label class="label" for="videoQuality">Video quality</label>
-        <select id="videoQuality"></select>
-        <label class="label" for="audioQuality">Audio quality</label>
-        <select id="audioQuality"></select>
-      </div>
-    </section>
 
-    <section class="card">
-      <p class="label">YouTube access (bot check)</p>
-      <p class="hint">Use cookies from a browser where you are signed into YouTube.
-        <strong>Chrome / Edge / Brave:</strong> close the browser completely before downloading, or use Firefox / a cookies.txt file.
-        <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Why?</a>
-      </p>
-      <div class="checks">
-        <label><input type="checkbox" id="chkBrowserCookies" checked /> Use browser cookies</label>
-      </div>
-      <div class="cookie-row">
-        <label class="label" for="cookieBrowser">Browser</label>
-        <select id="cookieBrowser"></select>
-      </div>
-      <div class="cookie-actions">
-        <button type="button" id="signInBtn" class="secondary">Sign in to YouTube (opens browser)</button>
-        <button type="button" id="saveCookiesBtn" class="secondary">Save cookie settings</button>
-      </div>
-      <div class="path-row cookie-file-row">
-        <input id="cookiesFile" type="text" readonly placeholder="Optional: cookies.txt file" />
-        <button type="button" id="browseCookiesBtn" class="secondary">Cookies file</button>
-      </div>
-    </section>
-
-    <section class="card grid-2">
-      <div>
-        <p class="label">Output folder</p>
-        <div class="path-row">
-          <input id="outputDir" type="text" readonly />
-          <button type="button" id="browseBtn" class="secondary">Browse</button>
+      <aside class="side-pane">
+        <div class="status-head">
+          <span class="label-inline">Queue</span>
         </div>
-      </div>
-      <div>
-        <p class="label">Save layout</p>
-        <div class="checks">
-          <label><input type="checkbox" id="chkBundle" checked /> Bundle (folder per video)</label>
-          <label><input type="checkbox" id="chkCombine" checked /> Combine streams (.webm + .mp4 → single video)</label>
-          <label><input type="radio" name="layout" id="layoutRaw" value="raw" checked /> Raw (flat output)</label>
-          <label><input type="radio" name="layout" id="layoutOrg" value="organized" /> Organized (videos / playlists / channels)</label>
+        <ul id="queueList" class="queue-list"></ul>
+        <div class="progress-wrap">
+          <div id="progressBar" class="progress-bar"></div>
         </div>
-      </div>
-    </section>
+        <p id="progressText" class="progress-text">Idle</p>
+        <button type="button" id="downloadBtn" class="download-btn">Download</button>
+      </aside>
+    </div>
 
-    <section class="card actions">
-      <button type="button" id="downloadBtn" class="primary">Add to queue</button>
-      <button type="button" id="clearLogBtn" class="secondary">Clear log</button>
-    </section>
-
-    <section class="card">
-      <p class="label">Queue</p>
-      <ul id="queueList" class="queue-list"></ul>
-      <div class="progress-wrap">
-        <div id="progressBar" class="progress-bar"></div>
+    <footer class="console-pane">
+      <div class="console-head">
+        <span class="label-inline">Console</span>
+        <button type="button" id="clearLogBtn" class="btn-sm">Clear</button>
+        <button type="button" id="copyLogBtn" class="btn-sm">Copy</button>
       </div>
-      <p id="progressText" class="progress-text">Idle</p>
-    </section>
-
-    <section class="card">
-      <div class="console-header">
-        <p class="label">Console</p>
-        <button type="button" id="copyLogBtn" class="secondary">Copy log</button>
-      </div>
-      <div id="console" class="console" tabindex="0" title="Select text and Ctrl+C to copy"></div>
-    </section>
+      <div id="console" class="console" tabindex="0"></div>
+    </footer>
   </div>
 
   <script src="app.js"></script>

@@ -19,9 +19,9 @@ def run_app() -> None:
         "Video Downloader",
         url=str(index_html),
         js_api=api,
-        width=920,
+        width=1180,
         height=780,
-        min_size=(720, 600),
+        min_size=(960, 680),
     )
 
     def on_loaded() -> None:
