@@ -225,6 +225,14 @@ class Api:
         removed = self._queue.remove(job_id)
         return {"ok": removed, **self._queue.queue_state()}
 
+    def retry_queue_job(self, job_id: str) -> dict[str, Any]:
+        retried = self._queue.retry_job(job_id)
+        return {"ok": retried, **self._queue.queue_state()}
+
+    def retry_failed_in_view(self, view_id: str | None = None) -> dict[str, Any]:
+        count = self._queue.retry_failed_in_view(view_id)
+        return {"ok": count > 0, "retried": count, **self._queue.queue_state()}
+
     def cancel_queue_view(self, view_id: str | None = None) -> dict[str, Any]:
         count = self._queue.cancel_view(view_id)
         return {"ok": True, "cancelled": count, **self._queue.queue_state()}

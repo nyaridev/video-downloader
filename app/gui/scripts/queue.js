@@ -188,6 +188,23 @@ function updateCancelClearButton(jobs, view) {
   }
 }
 
+function updateRetryAllButton(jobs, view) {
+  const btn = $("retryAllBtn");
+  if (!btn) return;
+  if (isPrepareView(view)) {
+    btn.hidden = true;
+    return;
+  }
+  const errorJobs = jobs.filter((j) => j.status === "error").length;
+  if (errorJobs > 0) {
+    btn.hidden = false;
+    btn.textContent = errorJobs === 1 ? "Retry failed download" : `Retry All (${errorJobs})`;
+    btn.title = `Retry ${errorJobs} failed download(s) in this view`;
+  } else {
+    btn.hidden = true;
+  }
+}
+
 function itemTagState(job, key, activeItem) {
   const items = job.items || [];
   if (!items.includes(key)) return null;
@@ -539,6 +556,32 @@ async function handleQueueItemAction(job) {
   await removeQueueJob(job.id);
 }
 
+async function retryQueueJob(jobId) {
+  try {
+    const res = await apiCall("retry_queue_job", jobId);
+    applyQueueState(res);
+    if (res.ok) {
+      log("info", "Download queued for retry.");
+    }
+  } catch (err) {
+    log("error", err.message);
+  }
+}
+
+export async function handleRetryAllFailed() {
+  try {
+    const res = await apiCall("retry_failed_in_view", state.activeViewId);
+    applyQueueState(res);
+    if (res.retried > 0) {
+      const list = $("queueList");
+      if (list) list.scrollTop = 0;
+      log("info", `Retrying ${res.retried} failed download(s).`);
+    }
+  } catch (err) {
+    log("error", err.message);
+  }
+}
+
 async function cancelActiveView() {
   try {
     const res = await apiCall("cancel_queue_view", state.activeViewId);
@@ -603,6 +646,7 @@ export function renderQueueList() {
   list.innerHTML = "";
 
   updateCancelClearButton(jobs, view);
+  updateRetryAllButton(jobs, view);
 
   if (isPrepareView(view)) {
     list.appendChild(buildPreparingQueueItem(view));
@@ -638,6 +682,23 @@ export function renderQueueList() {
         : "";
     headLeft.innerHTML = `${indexLabel}<strong>${queueItemDisplayTitle(job)}</strong><span class="queue-status-badge">${statusLabel(status)}</span>`;
 
+    const headActions = document.createElement("div");
+    headActions.className = "queue-item-head-actions";
+
+    if (status === "error") {
+      const retryBtn = document.createElement("button");
+      retryBtn.type = "button";
+      retryBtn.className = "queue-item-retry";
+      retryBtn.setAttribute("aria-label", "Retry download");
+      retryBtn.title = "Retry download";
+      retryBtn.textContent = "↻";
+      retryBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        retryQueueJob(job.id);
+      });
+      headActions.appendChild(retryBtn);
+    }
+
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";
     closeBtn.className = "queue-item-close";
@@ -651,7 +712,8 @@ export function renderQueueList() {
       handleQueueItemAction(job);
     });
 
-    head.append(headLeft, closeBtn);
+    headActions.appendChild(closeBtn);
+    head.append(headLeft, headActions);
 
     const url = document.createElement("div");
     url.className = "queue-item-url";

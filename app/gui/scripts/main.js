@@ -7,6 +7,7 @@ import {
   applyQueueState,
   closeQueueViewMenu,
   handleCancelClearView,
+  handleRetryAllFailed,
   removeQueueView,
   setActiveView,
   setProgress,
@@ -203,6 +204,10 @@ function init() {
 
   $("cancelViewBtn").addEventListener("click", () => {
     handleCancelClearView();
+  });
+
+  $("retryAllBtn")?.addEventListener("click", () => {
+    handleRetryAllFailed();
   });
 
   $("queueViewTrigger")?.addEventListener("click", (e) => {

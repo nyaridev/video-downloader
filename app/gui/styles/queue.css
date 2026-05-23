@@ -139,6 +139,14 @@
   min-width: 0;
 }
 
+.queue-item-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.queue-item-retry,
 .queue-item-close {
   flex-shrink: 0;
   width: 22px;
@@ -151,6 +159,16 @@
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
+}
+
+.queue-item-retry {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.queue-item-retry:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .queue-item-close:hover {
@@ -307,6 +325,28 @@
 
 .download-btn:hover {
   background: var(--download-hover);
+}
+
+.retry-all-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  background: rgba(217, 107, 99, 0.12);
+  color: var(--error);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.retry-all-btn:hover {
+  background: rgba(217, 107, 99, 0.22);
+  border-color: #e07a72;
+}
+
+.retry-all-btn[hidden] {
+  display: none;
 }
 
 .queue-view-picker {

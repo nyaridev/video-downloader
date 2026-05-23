@@ -406,6 +406,68 @@ class DownloadQueue:
         if job["status"] == "queued":
             job["status"] = "cancelled"
 
+    @staticmethod
+    def _reset_job_for_retry(job: dict[str, Any]) -> None:
+        job["status"] = "queued"
+        job["cancel_flag"] = {"cancel": False}
+        job["progress"] = {}
+        job.pop("result", None)
+
+    def retry_job(self, job_id: str) -> bool:
+        changed = False
+        batch_id: str | None = None
+        view_id = MAIN_VIEW_ID
+        with self._lock:
+            for job in self._jobs:
+                if job["id"] != job_id:
+                    continue
+                if job["status"] != "error":
+                    return False
+                batch_id = job.get("batch_id")
+                view_id = job.get("view_id", MAIN_VIEW_ID)
+                self._reset_job_for_retry(job)
+                changed = True
+                break
+            if changed:
+                if view_id == MAIN_VIEW_ID:
+                    self._refresh_main_view_status_locked()
+                else:
+                    self._refresh_batch_view_status_locked(batch_id)
+        if changed:
+            self._emit_queue()
+            self._ensure_dispatcher()
+        return changed
+
+    def retry_failed_in_view(self, view_id: str | None = None) -> int:
+        view_id = view_id or self._active_view
+        retried = 0
+        batch_id: str | None = None
+        with self._lock:
+            failed: list[dict[str, Any]] = []
+            keep: list[dict[str, Any]] = []
+            for job in self._jobs:
+                if job.get("view_id", MAIN_VIEW_ID) != view_id:
+                    keep.append(job)
+                    continue
+                if job["status"] != "error":
+                    keep.append(job)
+                    continue
+                self._reset_job_for_retry(job)
+                failed.append(job)
+                retried += 1
+                if batch_id is None and job.get("batch_id"):
+                    batch_id = job.get("batch_id")
+            if retried:
+                self._jobs = keep + failed
+                if view_id == MAIN_VIEW_ID:
+                    self._refresh_main_view_status_locked()
+                else:
+                    self._refresh_batch_view_status_locked(batch_id or view_id)
+        if retried:
+            self._emit_queue()
+            self._ensure_dispatcher()
+        return retried
+
     def remove(self, job_id: str) -> bool:
         changed = False
         batch_id: str | None = None
