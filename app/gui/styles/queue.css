@@ -321,10 +321,19 @@
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
+  transition:
+    background-color 0.14s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .download-btn:hover {
   background: var(--download-hover);
+}
+
+.download-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  opacity: 0.92;
 }
 
 .retry-all-btn {
@@ -338,11 +347,21 @@
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
+  transition:
+    background-color 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .retry-all-btn:hover {
   background: var(--error-soft-bg-hover);
   border-color: var(--error-border-hover);
+}
+
+.retry-all-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  opacity: 0.9;
 }
 
 .retry-all-btn[hidden] {

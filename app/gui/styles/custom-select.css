@@ -40,12 +40,18 @@
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--input-bg);
+  background-color: var(--input-bg);
   color: var(--text);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   text-align: left;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .custom-select--compact .custom-select-trigger {
@@ -56,6 +62,12 @@
 
 .custom-select-trigger:hover {
   border-color: var(--border-hover);
+  background-color: var(--mode-idle);
+}
+
+.custom-select-trigger:active {
+  opacity: 0.85;
+  transform: scale(0.99);
 }
 
 .custom-select.open .custom-select-trigger {
@@ -101,10 +113,14 @@
   list-style: none;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--card);
+  background-color: var(--card);
   box-shadow: var(--shadow-popover);
   max-height: 220px;
   overflow-y: auto;
+  --custom-select-option-bg: var(--card);
+  --custom-select-option-hover-bg: var(--mode-idle);
+  --custom-select-option-active-bg: var(--menu-active-bg);
+  --custom-select-option-active-hover-bg: var(--surface-hover);
 }
 
 .custom-select--drop-up .custom-select-menu {
@@ -129,7 +145,7 @@
   padding: 8px 10px;
   border: none;
   border-radius: calc(var(--radius) - 2px);
-  background: transparent;
+  background-color: var(--custom-select-option-bg);
   color: var(--text);
   font-size: 0.88rem;
   font-weight: 600;
@@ -138,15 +154,27 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    opacity 0.1s ease;
 }
 
 .custom-select-option-btn:hover {
-  background: var(--mode-idle);
+  background-color: var(--custom-select-option-hover-bg);
+}
+
+.custom-select-option-btn:active {
+  opacity: 0.75;
 }
 
 .custom-select-option.active .custom-select-option-btn {
-  background: var(--menu-active-bg);
+  background-color: var(--custom-select-option-active-bg);
   color: var(--accent);
+}
+
+.custom-select-option.active .custom-select-option-btn:hover {
+  background-color: var(--custom-select-option-active-hover-bg);
 }
 
 .custom-select-option-remove {
@@ -156,14 +184,24 @@
   padding: 0;
   border: none;
   border-radius: calc(var(--radius) - 2px);
-  background: transparent;
+  background-color: var(--custom-select-option-bg);
   color: var(--muted);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .custom-select-option-remove:hover {
-  background: var(--menu-remove-hover-bg);
+  background-color: var(--menu-remove-hover-bg);
   color: var(--menu-remove-hover-color);
+}
+
+.custom-select-option-remove:active {
+  transform: scale(0.92);
+  opacity: 0.85;
 }

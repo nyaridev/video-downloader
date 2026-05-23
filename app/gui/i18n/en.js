@@ -55,6 +55,7 @@ export default {
   "settings.theme": "Theme",
   "settings.themeDefault": "Default",
   "settings.themeMeta": "Meta",
+  "settings.themeAmethyst": "Amethyst",
   "settings.language": "Language",
   "settings.appearanceHint": "Applies immediately. Saved with your other settings.",
   "settings.frameless": "Frameless window",

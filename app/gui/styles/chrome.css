@@ -86,10 +86,19 @@ body:not(.frameless) .win-titlebar {
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    color 0.14s ease,
+    background-color 0.14s ease,
+    border-color 0.14s ease,
+    opacity 0.1s ease;
 }
 
 .page-tab:hover {
   color: var(--text);
+}
+
+.page-tab:active {
+  opacity: 0.75;
 }
 
 .page-tab.active {

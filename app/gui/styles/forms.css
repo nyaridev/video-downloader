@@ -8,10 +8,20 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .action-btn:hover {
   background: var(--accent-hover);
+}
+
+.action-btn:active:not(:disabled):not(.is-installed) {
+  transform: scale(0.98);
+  opacity: 0.92;
 }
 
 .action-btn.secondary-action {
@@ -88,10 +98,20 @@
   cursor: pointer;
   color: var(--text);
   background: var(--mode-idle);
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .mode-btn:hover {
   background: var(--surface-hover);
+}
+
+.mode-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
 }
 
 .mode-btn.active {
@@ -334,6 +354,15 @@
   border-radius: var(--radius);
   background: var(--input-bg);
   overflow: hidden;
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.number-input:hover {
+  border-color: var(--border-hover);
+  background: var(--mode-idle);
 }
 
 .number-input:focus-within {
@@ -384,11 +413,21 @@
   background: var(--mode-idle);
   color: var(--muted);
   cursor: pointer;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .number-input-btn:hover:not(:disabled) {
   background: var(--surface-hover);
   color: var(--text);
+}
+
+.number-input-btn:active:not(:disabled) {
+  transform: scale(0.94);
+  opacity: 0.85;
 }
 
 .number-input-btn:disabled {
@@ -424,9 +463,75 @@
 .concurrency-slider {
   display: block;
   width: 100%;
+  height: 5px;
   margin: 0;
-  accent-color: var(--accent);
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.concurrency-slider::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--mode-idle);
+  transition: background-color 0.14s ease;
+}
+
+.concurrency-slider:hover::-webkit-slider-runnable-track {
+  background: var(--surface-hover);
+}
+
+.concurrency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  margin-top: -4px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  transition:
+    background-color 0.14s ease,
+    transform 0.1s ease,
+    box-shadow 0.14s ease;
+}
+
+.concurrency-slider:hover::-webkit-slider-thumb {
+  background: var(--accent-hover);
+}
+
+.concurrency-slider:active::-webkit-slider-thumb {
+  transform: scale(0.9);
+}
+
+.concurrency-slider::-moz-range-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--mode-idle);
+  transition: background-color 0.14s ease;
+}
+
+.concurrency-slider:hover::-moz-range-track {
+  background: var(--surface-hover);
+}
+
+.concurrency-slider::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  transition:
+    background-color 0.14s ease,
+    transform 0.1s ease;
+}
+
+.concurrency-slider:hover::-moz-range-thumb {
+  background: var(--accent-hover);
+}
+
+.concurrency-slider:active::-moz-range-thumb {
+  transform: scale(0.9);
 }
 
 .field-compact {
@@ -461,10 +566,21 @@
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
 }
 
 .btn-sm:hover {
   background: var(--surface-hover);
+}
+
+.btn-sm:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.88;
 }
 
 .hint {

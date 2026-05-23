@@ -12,6 +12,11 @@ export const THEMES = {
     label: "Meta",
     href: "themes/Meta/theme.css",
   },
+  amethyst: {
+    id: "amethyst",
+    label: "Amethyst",
+    href: "themes/Amethyst/theme.css",
+  },
 };
 
 const THEME_LINK_ID = "themeStylesheet";

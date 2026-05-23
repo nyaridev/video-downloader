@@ -1,0 +1,385 @@
+/* Shell & panels */
+.main-pane,
+.side-pane,
+.tab-strip,
+.console-pane {
+  background: var(--card);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.download-pin {
+  background: var(--elevated);
+  border-bottom-color: var(--border);
+}
+
+.settings-section {
+  background: var(--elevated);
+  border-color: var(--border);
+}
+
+.settings-section-title {
+  color: var(--muted);
+}
+
+.settings-disclosure {
+  background: var(--input-bg);
+}
+
+.placeholder-group {
+  background: var(--card);
+}
+
+.placeholder-notes {
+  background: var(--input-bg);
+}
+
+.placeholder-group--file {
+  --placeholder-chip-bg: rgba(91, 33, 182, 0.1);
+  --placeholder-chip-border: rgba(91, 33, 182, 0.22);
+  --placeholder-code-bg: rgba(91, 33, 182, 0.16);
+  --placeholder-code-color: #a78bfa;
+}
+
+/* Tabs */
+.page-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  background: var(--tab-active-bg);
+}
+
+/* Controls */
+.url-input:focus,
+.number-input:focus-within {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(91, 33, 182, 0.45);
+}
+
+.action-btn,
+.download-btn,
+.mode-btn.active {
+  background: var(--accent);
+  box-shadow: none;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease,
+    box-shadow 0.14s ease;
+}
+
+.action-btn:hover,
+.download-btn:hover,
+.mode-btn.active:hover {
+  background: var(--accent-hover);
+  box-shadow: none;
+}
+
+.download-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  opacity: 0.92;
+}
+
+.pill-switch input:checked + .pill-track {
+  background: var(--accent);
+}
+
+.toggle-label {
+  color: var(--text);
+}
+
+.field-compact,
+.option-group-label {
+  color: var(--muted);
+}
+
+/* Download page — items & output containers */
+#page-download .settings-section {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+#page-download .settings-section .toggle-label {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+#page-download .toggle-grid {
+  gap: 6px 10px;
+}
+
+#page-download .custom-select-trigger,
+#page-download .path-input,
+#page-download .number-input {
+  background-color: var(--input-bg);
+  border-color: var(--border);
+}
+
+#page-download .custom-select-trigger {
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
+}
+
+#page-download .number-input {
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+#page-download .custom-select-trigger:hover,
+#page-download .number-input:hover {
+  border-color: var(--border-hover);
+  background-color: var(--mode-idle);
+}
+
+#page-download .path-input:focus {
+  border-color: var(--border-hover);
+}
+
+/* Side pane container */
+.side-pane {
+  gap: 10px;
+  padding: 12px;
+}
+
+.side-pane .status-head .label-inline {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.side-pane .queue-summary,
+.side-pane .queue-bytes,
+.side-pane .progress-text {
+  color: var(--muted);
+}
+
+.side-pane .progress-wrap {
+  background: var(--input-bg);
+  border-radius: 999px;
+}
+
+.side-pane .progress-wrap--overall {
+  height: 5px;
+}
+
+.side-pane .progress-bar {
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.side-pane .custom-select-trigger {
+  background-color: var(--input-bg);
+  border-color: var(--border);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.1s ease,
+    opacity 0.1s ease;
+}
+
+.side-pane .custom-select-trigger:hover {
+  background-color: var(--mode-idle);
+  border-color: var(--border-hover);
+}
+
+/* Queue entries */
+.side-pane .queue-list {
+  gap: 6px;
+}
+
+.side-pane .queue-item {
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-hover);
+  border-radius: var(--radius);
+}
+
+.side-pane .queue-item--empty {
+  background: var(--input-bg);
+  color: var(--muted);
+  border-left-color: var(--border);
+}
+
+.side-pane .queue-item--queued {
+  background: var(--queue-queued);
+  border-left-color: var(--border-hover);
+}
+
+.side-pane .queue-item--preparing:not(.queue-item--cancelled) {
+  border-left-color: var(--combining);
+}
+
+.side-pane .queue-item--running,
+.side-pane .queue-item--combining {
+  background: var(--queue-running);
+  border-color: var(--border);
+  border-left-color: var(--combining);
+}
+
+.side-pane .queue-item--done {
+  background: var(--queue-done);
+  border-color: var(--border);
+  border-left-color: var(--success);
+}
+
+.side-pane .queue-item--error {
+  background: var(--queue-error);
+  border-color: var(--border);
+  border-left-color: var(--error);
+}
+
+.side-pane .queue-item--cancelled {
+  background: var(--queue-cancelled);
+  border-left-color: var(--border-hover);
+  opacity: 0.75;
+}
+
+.side-pane .queue-item-head {
+  margin-bottom: 6px;
+}
+
+.side-pane .queue-item-head strong {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.side-pane .queue-item-index {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.side-pane .queue-status-badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--mode-idle);
+  color: var(--muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+}
+
+.side-pane .queue-item--preparing .queue-status-badge,
+.side-pane .queue-item--running .queue-status-badge,
+.side-pane .queue-item--combining .queue-status-badge {
+  background: var(--menu-active-bg);
+  color: var(--tag-active-text);
+}
+
+.side-pane .queue-item--done .queue-status-badge {
+  background: rgba(92, 184, 122, 0.14);
+  color: var(--success);
+}
+
+.side-pane .queue-item--error .queue-status-badge {
+  background: var(--error-soft-bg);
+  color: var(--error);
+}
+
+.side-pane .queue-item--cancelled .queue-status-badge {
+  background: var(--mode-idle);
+  color: var(--muted);
+}
+
+.side-pane .queue-item-url {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-bottom: 6px;
+}
+
+.side-pane .queue-item-file {
+  color: var(--text);
+  font-size: 0.72rem;
+  margin-bottom: 6px;
+}
+
+.side-pane .queue-item-file strong {
+  color: #a78bfa;
+  font-size: 0.64rem;
+}
+
+.side-pane .queue-item-meta {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+/* Item tags — metadata, thumbnail, audio, video */
+.side-pane .queue-item-tags {
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.side-pane .item-tag {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--mode-idle);
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.side-pane .item-tag--active {
+  background: var(--menu-active-bg);
+  border-color: rgba(91, 33, 182, 0.45);
+  color: var(--tag-active-text);
+}
+
+.side-pane .item-tag--done {
+  background: rgba(92, 184, 122, 0.1);
+  border-color: rgba(92, 184, 122, 0.28);
+  color: var(--success);
+}
+
+.side-pane .queue-item--running .progress-bar,
+.side-pane .queue-item--combining .progress-bar {
+  background: var(--combining);
+}
+
+.side-pane .queue-item--done .progress-bar {
+  background: var(--success);
+}
+
+.side-pane .queue-item--error .progress-bar {
+  background: var(--error);
+}
+
+.side-pane .queue-item--cancelled .progress-bar {
+  background: var(--border-hover);
+}
+
+.side-pane .progress-wrap--item {
+  height: 3px;
+  margin-top: 2px;
+}
+
+.side-pane .queue-item-retry,
+.side-pane .queue-item-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: var(--mode-idle);
+  color: var(--muted);
+}
+
+.side-pane .queue-item-retry:hover {
+  background: var(--menu-active-bg);
+  color: var(--tag-active-text);
+}
+
+.side-pane .queue-item-close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.side-pane .retry-all-btn {
+  border-radius: var(--radius);
+}

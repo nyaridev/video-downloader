@@ -252,6 +252,7 @@ function updateThemeSelectLabels() {
   const labels = {
     default: t("settings.themeDefault"),
     meta: t("settings.themeMeta"),
+    amethyst: t("settings.themeAmethyst"),
   };
   select.querySelectorAll("option").forEach((option) => {
     if (labels[option.value]) option.textContent = labels[option.value];
