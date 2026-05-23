@@ -10,16 +10,16 @@ import yt_dlp
 from yt_dlp.utils import DownloadError, DownloadCancelled
 
 from app.config import load_settings, normalize_tool_source
-from app.cookies import CookieExportError, ytdlp_cookie_opts
-from app.textutil import normalize_log_message, strip_ansi
-from app.formats import build_format_string, pick_nearest_height
+from app.auth.cookies import CookieExportError, ytdlp_cookie_opts
+from app.utils.text import normalize_log_message, strip_ansi
+from app.utils.formats import build_format_string, pick_nearest_height
 from app.paths import resolve_download_dir
 from app.downloader.extract import extract_info
 from app.downloader.ytdlp_opts import base_ytdlp_opts
 from app.downloader.metadata import write_metadata
 from app.downloader.verify import collect_heights, expected_files_present
 from app.downloader.cleanup import cleanup_cancelled_job
-from app.ffmpeg_tool import ffmpeg_available
+from app.tools.ffmpeg import ffmpeg_available
 
 LogFn = Callable[[str, str], None]
 ProgressFn = Callable[[dict[str, Any]], None]

@@ -6,7 +6,7 @@ from typing import Any
 
 from yt_dlp.utils import DownloadError
 
-from app.cookies import ytdlp_cookie_opts
+from app.auth.cookies import ytdlp_cookie_opts
 from app.config import load_settings
 from app.downloader.extract import extract_info
 from app.downloader.ytdlp_opts import base_ytdlp_opts

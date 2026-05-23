@@ -13,7 +13,8 @@ import zipfile
 from pathlib import Path
 
 from app.paths import DENO_DIR, DENO_EXE
-from app.tool_env import env_executable_path
+from app.tools.env import env_executable_path
+
 DENO_DOWNLOAD_BASE = "https://github.com/denoland/deno/releases/latest/download"
 
 

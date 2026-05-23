@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.extras import resolve_tooling_from_settings
+from app.tools.extras import resolve_tooling_from_settings
 
 
 def base_ytdlp_opts(**extra: Any) -> dict[str, Any]:

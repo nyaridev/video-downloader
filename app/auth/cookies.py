@@ -109,5 +109,4 @@ def ytdlp_cookie_opts(settings: dict[str, Any]) -> dict[str, Any]:
     if browser in CHROMIUM_BROWSERS:
         raise CookieExportError(cookie_copy_help())
 
-    # Firefox: yt-dlp can read directly when export fails
     return {"cookiesfrombrowser": (browser,)}

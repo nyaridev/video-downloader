@@ -16,7 +16,6 @@ def normalize_log_message(text: str) -> str:
     """Plain text safe for the webview console."""
     msg = strip_ansi(text)
     msg = msg.replace("\r\n", "\n").replace("\r", "\n")
-    # Straight quotes (avoid odd glyphs in some fonts)
     msg = msg.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     msg = msg.replace("\u2022", "-")
     msg = _ERROR_DUP_RE.sub("ERROR: ", msg)

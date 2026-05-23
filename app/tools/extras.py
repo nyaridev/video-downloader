@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from app.config import load_settings, normalize_tool_source, save_settings
-from app.deno import install_local_deno, local_deno_status, path_deno_status, resolve_deno_runtime
-from app.ffmpeg_tool import (
+from app.tools.deno import install_local_deno, local_deno_status, path_deno_status, resolve_deno_runtime
+from app.tools.ffmpeg import (
     install_local_ffmpeg,
     local_ffmpeg_status,
     path_ffmpeg_status,

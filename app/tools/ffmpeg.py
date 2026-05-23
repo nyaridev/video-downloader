@@ -14,7 +14,8 @@ import zipfile
 from pathlib import Path
 
 from app.paths import FFMPEG_DIR, FFMPEG_EXE
-from app.tool_env import env_executable_path
+from app.tools.env import env_executable_path
+
 FFMPEG_DOWNLOAD_BASE = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest"
 
 

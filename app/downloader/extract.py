@@ -7,9 +7,9 @@ from typing import Any
 import yt_dlp
 from yt_dlp.utils import DownloadError, ExtractorError
 
-from app.cookies import CookieExportError, cookie_copy_help, export_browser_cookies, is_cookie_copy_error
+from app.auth.cookies import CookieExportError, cookie_copy_help, export_browser_cookies, is_cookie_copy_error
 from app.downloader.ytdlp_opts import base_ytdlp_opts
-from app.textutil import normalize_log_message
+from app.utils.text import normalize_log_message
 
 
 def _bot_check_hint(msg: str) -> bool:

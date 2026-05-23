@@ -1,0 +1,1 @@
+"""Application lifecycle (restart, etc.)."""

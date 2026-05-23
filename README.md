@@ -35,8 +35,19 @@ If downloads fail with a bot check, use the Settings tab: enable browser cookies
 
 ```
 start.bat          Launch the app
-start-user.bat     Optional Python override
+start-user.bat     Optional Python / tool path overrides
 main.py            Entry point
-app/               Code and GUI
+app/               Application code
+  api.py           GUI ↔ Python bridge
+  gui_host.py      Webview window
+  config.py        Settings
+  paths.py         Paths and folder names
+  queue.py         Download queue
+  gui/             Frontend (HTML/CSS/JS)
+  downloader/      yt-dlp download engine
+  tools/           Deno, ffmpeg, extras
+  auth/            Cookies and browser sign-in
+  utils/           Formats and log helpers
+  system/          Restart and lifecycle
 output/            Default downloads (created automatically)
 ```

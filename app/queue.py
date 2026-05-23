@@ -13,7 +13,7 @@ from yt_dlp.utils import DownloadError
 from app.config import load_settings, normalize_concurrency
 from app.downloader.batch_extract import extract_batch_entries
 from app.downloader.engine import DownloadEngine
-from app.textutil import normalize_log_message
+from app.utils.text import normalize_log_message
 
 EventFn = Callable[[str, dict[str, Any]], None]
 

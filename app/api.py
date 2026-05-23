@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import json
 import threading
-from pathlib import Path
 from typing import Any
 
-from app import formats
-from app.browser_launch import launch_for_youtube_signin
+from app.auth.browser import launch_for_youtube_signin
 from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, save_settings
-from app.deno import install_local_deno
-from app.extras import get_extras_status, save_extras_settings
-from app.ffmpeg_tool import install_local_ffmpeg
+from app.gui.dialogs import pick_file, pick_folder
 from app.paths import DEFAULT_OUTPUT, ROOT, ensure_output_root
 from app.queue import DownloadQueue
-from app.restart import restart_application
+from app.system.restart import restart_application
+from app.tools.deno import install_local_deno
+from app.tools.extras import get_extras_status, save_extras_settings
+from app.tools.ffmpeg import install_local_ffmpeg
+from app.utils import formats
 
 _webview_window: Any = None
 
@@ -146,7 +146,7 @@ class Api:
             _webview_window.destroy()
 
     def browse_cookies_file(self) -> str:
-        path = self._pick_file(
+        path = pick_file(
             [("Cookies", "*.txt"), ("All files", "*.*")],
             load_settings().get("cookies_file") or str(ROOT),
         )
@@ -159,7 +159,7 @@ class Api:
         return {"ok": ok, "message": message}
 
     def browse_output_dir(self) -> str:
-        path = self._pick_folder(self._output_dir)
+        path = pick_folder(self._output_dir, DEFAULT_OUTPUT)
         if path:
             self._output_dir = path
             ensure_output_root(path)
@@ -194,47 +194,3 @@ class Api:
     def remove_queue_view(self, view_id: str) -> dict[str, Any]:
         removed = self._queue.remove_view(view_id)
         return {"ok": removed, **self._queue.queue_state()}
-
-    def _pick_file(self, filetypes: list[tuple[str, str]], initial: str) -> str | None:
-        result: list[str | None] = [None]
-
-        def _dialog() -> None:
-            try:
-                import tkinter as tk
-                from tkinter import filedialog
-
-                root = tk.Tk()
-                root.withdraw()
-                root.attributes("-topmost", True)
-                chosen = filedialog.askopenfilename(initialdir=initial, filetypes=filetypes)
-                root.destroy()
-                result[0] = chosen or None
-            except Exception:
-                result[0] = None
-
-        t = threading.Thread(target=_dialog)
-        t.start()
-        t.join(timeout=120)
-        return result[0]
-
-    def _pick_folder(self, initial: str) -> str | None:
-        result: list[str | None] = [None]
-
-        def _dialog() -> None:
-            try:
-                import tkinter as tk
-                from tkinter import filedialog
-
-                root = tk.Tk()
-                root.withdraw()
-                root.attributes("-topmost", True)
-                chosen = filedialog.askdirectory(initialdir=initial or str(DEFAULT_OUTPUT))
-                root.destroy()
-                result[0] = chosen or None
-            except Exception:
-                result[0] = None
-
-        t = threading.Thread(target=_dialog)
-        t.start()
-        t.join(timeout=120)
-        return result[0]

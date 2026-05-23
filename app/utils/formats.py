@@ -48,8 +48,7 @@ def build_format_string(
     audio_quality: str,
 ) -> str:
     if want_video and want_audio:
-        v = _video_sort(video_quality)
-        return v
+        return _video_sort(video_quality)
     if want_video:
         height = VIDEO_HEIGHTS.get(video_quality)
         if height is None:
