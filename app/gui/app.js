@@ -1,6 +1,7 @@
 let state = {
   mode: "video",
   outputDir: "",
+  frameless: true,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -80,6 +81,41 @@ function setMode(mode) {
   });
 }
 
+function applyFramelessUi(frameless) {
+  state.frameless = frameless;
+  document.body.classList.toggle("frameless", frameless);
+}
+
+function setPage(page) {
+  document.querySelectorAll(".page-tab").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.page === page);
+  });
+  document.querySelectorAll(".page-view").forEach((panel) => {
+    panel.classList.toggle("active", panel.id === `page-${page}`);
+  });
+}
+
+function readSettingsFromForm() {
+  return {
+    use_browser_cookies: $("chkBrowserCookies").checked,
+    cookies_browser: $("cookieBrowser").value,
+    cookies_file: $("cookiesFile").value,
+    frameless: $("chkFrameless").checked,
+  };
+}
+
+async function saveAppSettings() {
+  const s = readSettingsFromForm();
+  await apiCall(
+    "save_app_settings",
+    s.use_browser_cookies,
+    s.cookies_browser,
+    s.cookies_file,
+    s.frameless
+  );
+  log("info", "Settings saved.");
+}
+
 function readConfig() {
   const wantVideo = $("chkVideo").checked;
   const wantAudio = $("chkAudio").checked;
@@ -154,17 +190,19 @@ async function apiCall(method, ...args) {
   return await window.pywebview.api[method](...args);
 }
 
-async function saveCookieSettings() {
-  await apiCall(
-    "save_cookie_settings",
-    $("chkBrowserCookies").checked,
-    $("cookieBrowser").value,
-    $("cookiesFile").value
-  );
-  log("info", "Cookie settings saved.");
-}
-
 async function init() {
+  document.querySelectorAll(".page-tab").forEach((btn) => {
+    btn.addEventListener("click", () => setPage(btn.dataset.page));
+  });
+
+  document.querySelectorAll(".mode-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setMode(btn.dataset.mode));
+  });
+
+  $("winMin")?.addEventListener("click", () => apiCall("minimize_window"));
+  $("winMax")?.addEventListener("click", () => apiCall("toggle_maximize_window"));
+  $("winClose")?.addEventListener("click", () => apiCall("close_window"));
+
   window.addEventListener("pywebviewready", async () => {
     try {
       const defaults = await apiCall("get_defaults");
@@ -173,25 +211,32 @@ async function init() {
       fillSelect($("videoQuality"), defaults.video_qualities);
       fillSelect($("audioQuality"), defaults.audio_qualities);
       fillSelect($("cookieBrowser"), defaults.browser_options);
-      $("cookieBrowser").value = defaults.cookies_browser || "edge";
+      $("cookieBrowser").value = defaults.cookies_browser || "firefox";
       $("chkBrowserCookies").checked = defaults.use_browser_cookies !== false;
       $("cookieBrowser").disabled = !$("chkBrowserCookies").checked;
       $("cookiesFile").value = defaults.cookies_file || "";
+      $("chkFrameless").checked = defaults.frameless !== false;
+      applyFramelessUi(defaults.frameless !== false);
       renderQueue([]);
       log("info", `Ready. Output: ${defaults.output_dir}`);
-      log("info", "Console: select text or use Copy log.");
     } catch (err) {
       log("error", err.message);
     }
   });
 
-  document.querySelectorAll(".mode-btn").forEach((btn) => {
-    btn.addEventListener("click", () => setMode(btn.dataset.mode));
+  $("saveSettingsBtn").addEventListener("click", async () => {
+    try {
+      await saveAppSettings();
+    } catch (err) {
+      log("error", err.message);
+    }
   });
 
-  $("saveCookiesBtn").addEventListener("click", async () => {
+  $("restartBtn").addEventListener("click", async () => {
     try {
-      await saveCookieSettings();
+      await saveAppSettings();
+      log("info", "Restarting program...");
+      await apiCall("restart_program");
     } catch (err) {
       log("error", err.message);
     }
@@ -199,7 +244,6 @@ async function init() {
 
   $("signInBtn").addEventListener("click", async () => {
     try {
-      await saveCookieSettings();
       const result = await apiCall("open_youtube_signin");
       log(result.ok ? "info" : "error", result.message);
     } catch (err) {
@@ -211,22 +255,15 @@ async function init() {
     try {
       const path = await apiCall("browse_cookies_file");
       $("cookiesFile").value = path || "";
-      if (path) {
-        $("chkBrowserCookies").checked = false;
-        await saveCookieSettings();
-        log("info", `Using cookies file: ${path}`);
-      }
+      if (path) $("chkBrowserCookies").checked = false;
     } catch (err) {
       log("error", err.message);
     }
   });
 
-  $("chkBrowserCookies").addEventListener("change", async () => {
+  $("chkBrowserCookies").addEventListener("change", () => {
     $("cookieBrowser").disabled = !$("chkBrowserCookies").checked;
-    if ($("chkBrowserCookies").checked && $("cookiesFile").value) {
-      $("cookiesFile").value = "";
-      await apiCall("save_cookie_settings", true, $("cookieBrowser").value, "");
-    }
+    if ($("chkBrowserCookies").checked) $("cookiesFile").value = "";
   });
 
   $("browseBtn").addEventListener("click", async () => {
@@ -241,13 +278,13 @@ async function init() {
 
   $("downloadBtn").addEventListener("click", async () => {
     try {
-      await saveCookieSettings();
       const config = readConfig();
       if (!config.url) throw new Error("Enter a YouTube URL.");
       const res = await apiCall("enqueue_download", config);
       renderQueue(res.queue);
       log("info", `Download queued (${res.job_id})`);
       $("url").value = "";
+      setPage("download");
     } catch (err) {
       log("error", err.message);
     }

@@ -19,15 +19,17 @@ Optional: edit **`start-user.bat`** to set a custom Python path, then run that i
 
 Downloads go to the **`output/`** folder by default.
 
+## Settings
+
+Open the **Settings** tab to configure:
+
+- **Frameless window** (default on) — custom title bar with minimize / maximize / close
+- **Browser cookies** for YouTube bot checks — use **Sign in**, then **Save Settings**
+- **Restart Program** — applies window mode and reloads the app
+
 ## YouTube sign-in
 
-If downloads fail with a bot check:
-
-1. Enable **Use browser cookies** in the app
-2. Click **Sign in to YouTube**
-3. Sign in in the browser that opens, then try again
-
-For Chrome/Edge, the app launches the browser with a cookie unlock flag. Firefox or a `cookies.txt` file also works.
+If downloads fail with a bot check, use the Settings tab: enable browser cookies, click **Sign in**, sign in in the browser, **Save Settings**, then download.
 
 ## Project layout
 

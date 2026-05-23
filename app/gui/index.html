@@ -8,63 +8,92 @@
 </head>
 <body>
   <div class="app">
-    <header class="top-bar">
-      <h1>Video Downloader</h1>
+    <header id="winTitlebar" class="win-titlebar pywebview-drag-region">
+      <span class="win-title-text">Video Downloader</span>
+      <div class="window-controls">
+        <button type="button" id="winMin" class="win-btn" title="Minimize" aria-label="Minimize">
+          <svg width="10" height="10" viewBox="0 0 10 10"><path fill="currentColor" d="M0 4.5h10v1H0z"/></svg>
+        </button>
+        <button type="button" id="winMax" class="win-btn" title="Maximize" aria-label="Maximize">
+          <svg width="10" height="10" viewBox="0 0 10 10"><path fill="none" stroke="currentColor" d="M1 1h8v8H1z"/></svg>
+        </button>
+        <button type="button" id="winClose" class="win-btn win-close" title="Close" aria-label="Close">
+          <svg width="10" height="10" viewBox="0 0 10 10"><path stroke="currentColor" stroke-width="1.2" d="M1.5 1.5 8.5 8.5M8.5 1.5 1.5 8.5"/></svg>
+        </button>
+      </div>
     </header>
 
+    <nav class="tab-strip">
+      <button type="button" class="page-tab active" data-page="download">Download</button>
+      <button type="button" class="page-tab" data-page="settings">Settings</button>
+    </nav>
+
+    <div class="app-body">
     <div class="workspace">
-      <div class="settings-pane">
-        <input id="url" type="text" class="url-input" placeholder="Paste YouTube URL..." />
-
-        <div class="mode-row" id="modeRow">
-          <button type="button" class="mode-btn active" data-mode="video">Video</button>
-          <button type="button" class="mode-btn" data-mode="playlist">Playlist</button>
-          <button type="button" class="mode-btn" data-mode="channel">Channel</button>
+      <div class="main-pane">
+        <div id="page-download" class="page-view active">
+          <input id="url" type="text" class="url-input" placeholder="Paste YouTube URL..." />
+          <div class="mode-row" id="modeRow">
+            <button type="button" class="mode-btn active" data-mode="video">Video</button>
+            <button type="button" class="mode-btn" data-mode="playlist">Playlist</button>
+            <button type="button" class="mode-btn" data-mode="channel">Channel</button>
+          </div>
+          <div class="settings-block">
+            <div class="row wrap">
+              <span class="label-inline">Items</span>
+              <label class="chip"><input type="checkbox" id="chkVideo" checked /> Video</label>
+              <label class="chip"><input type="checkbox" id="chkAudio" checked /> Audio</label>
+              <label class="chip"><input type="checkbox" id="chkMeta" checked /> Metadata</label>
+              <label class="chip"><input type="checkbox" id="chkThumb" checked /> Thumbnail</label>
+            </div>
+            <div class="row">
+              <label class="field-compact" for="videoQuality">Video</label>
+              <select id="videoQuality" class="select-compact"></select>
+              <label class="field-compact" for="audioQuality">Audio</label>
+              <select id="audioQuality" class="select-compact"></select>
+            </div>
+          </div>
+          <div class="settings-block">
+            <div class="row">
+              <span class="label-inline">Output</span>
+              <input id="outputDir" type="text" class="path-input" readonly />
+              <button type="button" id="browseBtn" class="btn-sm">Browse</button>
+            </div>
+            <div class="row wrap">
+              <label class="chip"><input type="checkbox" id="chkBundle" checked /> Bundle</label>
+              <label class="chip"><input type="checkbox" id="chkCombine" checked /> Combine streams</label>
+              <label class="chip"><input type="radio" name="layout" id="layoutRaw" checked /> Flat</label>
+              <label class="chip"><input type="radio" name="layout" id="layoutOrg" /> Organized</label>
+            </div>
+          </div>
         </div>
 
-        <div class="settings-block">
-          <div class="row wrap">
-            <span class="label-inline">Items</span>
-            <label class="chip"><input type="checkbox" id="chkVideo" checked /> Video</label>
-            <label class="chip"><input type="checkbox" id="chkAudio" checked /> Audio</label>
-            <label class="chip"><input type="checkbox" id="chkMeta" checked /> Metadata</label>
-            <label class="chip"><input type="checkbox" id="chkThumb" checked /> Thumbnail</label>
+        <div id="page-settings" class="page-view settings-view">
+          <div class="settings-scroll">
+            <div class="settings-block no-border">
+              <span class="label-inline">Window</span>
+              <label class="chip"><input type="checkbox" id="chkFrameless" checked /> Frameless window</label>
+              <p class="hint">Requires restart. Hides the system title bar and uses custom window buttons.</p>
+            </div>
+            <div class="settings-block">
+              <span class="label-inline">YouTube</span>
+              <p class="hint">Sign in if downloads fail with a bot check.
+                <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>
+              </p>
+              <div class="row wrap">
+                <label class="chip"><input type="checkbox" id="chkBrowserCookies" checked /> Browser cookies</label>
+                <select id="cookieBrowser" class="select-compact"></select>
+                <button type="button" id="signInBtn" class="btn-sm">Sign in</button>
+              </div>
+              <div class="row">
+                <input id="cookiesFile" type="text" class="path-input" readonly placeholder="Optional cookies.txt" />
+                <button type="button" id="browseCookiesBtn" class="btn-sm">File</button>
+              </div>
+            </div>
           </div>
-          <div class="row">
-            <label class="field-compact" for="videoQuality">Video</label>
-            <select id="videoQuality" class="select-compact"></select>
-            <label class="field-compact" for="audioQuality">Audio</label>
-            <select id="audioQuality" class="select-compact"></select>
-          </div>
-        </div>
-
-        <div class="settings-block">
-          <div class="row">
-            <span class="label-inline">Output</span>
-            <input id="outputDir" type="text" class="path-input" readonly />
-            <button type="button" id="browseBtn" class="btn-sm">Browse</button>
-          </div>
-          <div class="row wrap">
-            <label class="chip"><input type="checkbox" id="chkBundle" checked /> Bundle</label>
-            <label class="chip"><input type="checkbox" id="chkCombine" checked /> Combine streams</label>
-            <label class="chip"><input type="radio" name="layout" id="layoutRaw" checked /> Flat</label>
-            <label class="chip"><input type="radio" name="layout" id="layoutOrg" /> Organized</label>
-          </div>
-        </div>
-
-        <div class="settings-block">
-          <p class="hint">YouTube sign-in if bot check fails.
-            <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>
-          </p>
-          <div class="row wrap">
-            <label class="chip"><input type="checkbox" id="chkBrowserCookies" checked /> Browser cookies</label>
-            <select id="cookieBrowser" class="select-compact"></select>
-            <button type="button" id="signInBtn" class="btn-sm">Sign in</button>
-            <button type="button" id="saveCookiesBtn" class="btn-sm">Save</button>
-          </div>
-          <div class="row">
-            <input id="cookiesFile" type="text" class="path-input" readonly placeholder="Optional cookies.txt" />
-            <button type="button" id="browseCookiesBtn" class="btn-sm">File</button>
+          <div class="settings-actions">
+            <button type="button" id="saveSettingsBtn" class="action-btn">Save Settings</button>
+            <button type="button" id="restartBtn" class="action-btn secondary-action">Restart Program</button>
           </div>
         </div>
       </div>
@@ -90,6 +119,7 @@
       </div>
       <div id="console" class="console" tabindex="0"></div>
     </footer>
+    </div>
   </div>
 
   <script src="app.js"></script>

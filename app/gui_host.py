@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+import sys
+
 import webview
 
 from app.api import Api, bind_webview_window
+from app.config import load_settings
 from app.paths import GUI_DIR, ROOT
 
 _STORAGE = ROOT / ".webview"
 
 
+def _preferred_gui() -> str | None:
+    if sys.platform == "win32":
+        return "edgechromium"
+    return None
+
+
 def run_app() -> None:
+    settings = load_settings()
+    frameless = bool(settings.get("frameless", True))
     api = Api()
     index_html = GUI_DIR / "index.html"
     _STORAGE.mkdir(parents=True, exist_ok=True)
@@ -22,6 +33,9 @@ def run_app() -> None:
         width=1180,
         height=780,
         min_size=(960, 680),
+        frameless=frameless,
+        easy_drag=False,
+        shadow=frameless and sys.platform == "win32",
     )
 
     def on_loaded() -> None:
@@ -29,10 +43,14 @@ def run_app() -> None:
 
     window.events.loaded += on_loaded
 
-    webview.start(
-        gui="edgechromium",
-        debug=False,
-        http_server=True,
-        private_mode=False,
-        storage_path=str(_STORAGE),
-    )
+    start_kwargs: dict = {
+        "debug": False,
+        "http_server": True,
+        "private_mode": False,
+        "storage_path": str(_STORAGE),
+    }
+    gui = _preferred_gui()
+    if gui:
+        start_kwargs["gui"] = gui
+
+    webview.start(**start_kwargs)

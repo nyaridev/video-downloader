@@ -1,9 +1,11 @@
-"""Launch Chromium browsers with the cookie-database unlock flag."""
+"""Launch browsers for YouTube sign-in (Windows and Linux)."""
 
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from app.config import CHROMIUM_BROWSERS
@@ -11,8 +13,17 @@ from app.config import CHROMIUM_BROWSERS
 UNLOCK_FLAG = "--disable-features=LockProfileCookieDatabase"
 YOUTUBE_URL = "https://www.youtube.com/"
 
-# Common Windows install locations
-_SEARCH_PATHS: dict[str, list[str]] = {
+_LINUX_BIN_NAMES: dict[str, tuple[str, ...]] = {
+    "firefox": ("firefox", "firefox-esr"),
+    "chrome": ("google-chrome", "google-chrome-stable", "chrome"),
+    "chromium": ("chromium", "chromium-browser"),
+    "brave": ("brave-browser", "brave"),
+    "opera": ("opera",),
+    "vivaldi": ("vivaldi", "vivaldi-stable"),
+    "edge": ("microsoft-edge", "microsoft-edge-stable"),
+}
+
+_WIN_SEARCH: dict[str, list[str]] = {
     "chrome": [
         r"%ProgramFiles%\Google\Chrome\Application\chrome.exe",
         r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe",
@@ -38,56 +49,55 @@ _SEARCH_PATHS: dict[str, list[str]] = {
         r"%ProgramFiles%\Vivaldi\Application\vivaldi.exe",
         r"%LocalAppData%\Vivaldi\Application\vivaldi.exe",
     ],
+    "firefox": [
+        r"%ProgramFiles%\Mozilla Firefox\firefox.exe",
+        r"%ProgramFiles(x86)%\Mozilla Firefox\firefox.exe",
+    ],
 }
 
 
-def _expand(path: str) -> Path:
-    return Path(os.path.expandvars(path))
-
-
 def find_browser_exe(browser: str) -> Path | None:
-    if browser == "firefox":
-        for pattern in (
-            r"%ProgramFiles%\Mozilla Firefox\firefox.exe",
-            r"%ProgramFiles(x86)%\Mozilla Firefox\firefox.exe",
-        ):
-            p = _expand(pattern)
-            if p.is_file():
-                return p
+    if sys.platform == "win32":
+        for pattern in _WIN_SEARCH.get(browser, []):
+            path = Path(os.path.expandvars(pattern))
+            if path.is_file():
+                return path
         return None
 
-    for pattern in _SEARCH_PATHS.get(browser, []):
-        p = _expand(pattern)
-        if p.is_file():
-            return p
+    for name in _LINUX_BIN_NAMES.get(browser, (browser,)):
+        resolved = shutil.which(name)
+        if resolved:
+            return Path(resolved)
     return None
 
 
 def launch_for_youtube_signin(browser: str) -> tuple[bool, str]:
-    """Open browser at YouTube; Chromium builds get the cookie-unlock flag."""
+    """Open browser at YouTube; Chromium builds get the cookie-unlock flag on Windows."""
     exe = find_browser_exe(browser)
     if exe is None:
-        return False, f"Could not find {browser} on this PC. Open it manually and sign in to YouTube."
+        return False, (
+            f"Could not find {browser}. Open YouTube in your browser manually and sign in."
+        )
 
     args = [str(exe)]
-    if browser in CHROMIUM_BROWSERS:
+    if browser in CHROMIUM_BROWSERS and sys.platform == "win32":
         args.append(UNLOCK_FLAG)
     args.append(YOUTUBE_URL)
 
+    popen_kwargs: dict = {
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if sys.platform == "win32":
+        popen_kwargs["close_fds"] = True
+    else:
+        popen_kwargs["start_new_session"] = True
+
     try:
-        subprocess.Popen(
-            args,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            close_fds=True,
-        )
+        subprocess.Popen(args, **popen_kwargs)
     except OSError as exc:
         return False, f"Failed to launch {browser}: {exc}"
 
-    if browser in CHROMIUM_BROWSERS:
-        return (
-            True,
-            f"Launched {browser} with cookie unlock flag. Sign in, then try downloading "
-            "(you can leave this window open).",
-        )
-    return True, f"Launched {browser}. Sign in to YouTube, then retry the download."
+    if browser in CHROMIUM_BROWSERS and sys.platform == "win32":
+        return True, f"Launched {browser} with cookie unlock flag. Sign in, then retry."
+    return True, f"Launched {browser}. Sign in to YouTube, then retry."
