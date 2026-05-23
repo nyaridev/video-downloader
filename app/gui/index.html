@@ -31,20 +31,35 @@
     <div class="app-body">
     <div class="workspace">
       <div class="main-pane">
-        <div id="page-download" class="page-view active">
-          <input id="url" type="text" class="url-input" placeholder="Paste YouTube URL..." />
-          <div class="mode-row" id="modeRow">
-            <button type="button" class="mode-btn active" data-mode="video">Video</button>
-            <button type="button" class="mode-btn" data-mode="playlist">Playlist</button>
-            <button type="button" class="mode-btn" data-mode="channel">Channel</button>
+        <div id="page-download" class="page-view download-view active">
+          <div class="download-pin">
+            <input id="url" type="text" class="url-input" placeholder="Paste YouTube URL..." />
+            <div class="mode-row" id="modeRow">
+              <button type="button" class="mode-btn active" data-mode="video">Video</button>
+              <button type="button" class="mode-btn" data-mode="playlist">Playlist</button>
+              <button type="button" class="mode-btn" data-mode="channel">Channel</button>
+            </div>
           </div>
+          <div class="download-scroll">
           <div class="settings-block">
-            <div class="row wrap">
-              <span class="label-inline">Items</span>
-              <label class="chip"><input type="checkbox" id="chkVideo" checked /> Video</label>
-              <label class="chip"><input type="checkbox" id="chkAudio" checked /> Audio</label>
-              <label class="chip"><input type="checkbox" id="chkMeta" checked /> Metadata</label>
-              <label class="chip"><input type="checkbox" id="chkThumb" checked /> Thumbnail</label>
+            <span class="label-inline">Items</span>
+            <div class="toggle-grid">
+              <label class="toggle-card" data-tip="Download the video as MP4. When audio is also enabled, both streams are merged into one file.">
+                <span class="pill-switch"><input type="checkbox" id="chkVideo" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                <span class="toggle-label">Video</span>
+              </label>
+              <label class="toggle-card" data-tip="Download a separate audio-only file (M4A) in addition to any video file.">
+                <span class="pill-switch"><input type="checkbox" id="chkAudio" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                <span class="toggle-label">Audio</span>
+              </label>
+              <label class="toggle-card" data-tip="Save title, description, uploader, and other details as a compact JSON metadata file.">
+                <span class="pill-switch"><input type="checkbox" id="chkMeta" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                <span class="toggle-label">Metadata</span>
+              </label>
+              <label class="toggle-card" data-tip="Download the video thumbnail image alongside other files.">
+                <span class="pill-switch"><input type="checkbox" id="chkThumb" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                <span class="toggle-label">Thumbnail</span>
+              </label>
             </div>
             <div class="row">
               <label class="field-compact" for="videoQuality">Video</label>
@@ -59,12 +74,47 @@
               <input id="outputDir" type="text" class="path-input" readonly />
               <button type="button" id="browseBtn" class="btn-sm">Browse</button>
             </div>
-            <div class="row wrap">
-              <label class="chip"><input type="checkbox" id="chkBundle" checked /> Bundle</label>
-              <label class="chip"><input type="checkbox" id="chkCombine" checked /> Combine streams</label>
-              <label class="chip"><input type="radio" name="layout" id="layoutRaw" checked /> Flat</label>
-              <label class="chip"><input type="radio" name="layout" id="layoutOrg" /> Organized</label>
+            <div class="option-group">
+              <span class="option-group-label">Files</span>
+              <div class="toggle-grid toggle-grid--compact">
+                <label class="toggle-card" data-tip="Place each video's files in its own subfolder named after the title.">
+                  <span class="pill-switch"><input type="checkbox" id="chkBundle" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Bundle</span>
+                </label>
+                <label class="toggle-card" data-tip="Merge separate video and audio streams into one MP4. Requires ffmpeg in your PATH.">
+                  <span class="pill-switch"><input type="checkbox" id="chkCombine" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Combine streams</span>
+                </label>
+              </div>
             </div>
+            <div class="option-group">
+              <span class="option-group-label">Layout</span>
+              <div class="toggle-grid">
+                <label class="toggle-card" data-tip="Save files directly in the output folder with no extra category folders.">
+                  <span class="pill-switch"><input type="radio" name="layout" id="layoutRaw" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Flat</span>
+                </label>
+                <label class="toggle-card" data-tip="Sort downloads into videos, playlists, or channels subfolders based on the source.">
+                  <span class="pill-switch"><input type="radio" name="layout" id="layoutOrg" /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Organized</span>
+                </label>
+              </div>
+            </div>
+            <div class="option-group">
+              <span class="option-group-label">Concurrent</span>
+              <div class="async-row">
+                <label class="toggle-card toggle-card--grow" data-tip="Download multiple queue items at the same time, up to the batch size limit.">
+                  <span class="pill-switch"><input type="checkbox" id="chkAsync" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Async download</span>
+                </label>
+                <label class="batch-field" for="batchCount" data-tip="Maximum number of files to download in parallel when async is enabled.">
+                  <span class="field-compact">Batch</span>
+                  <input type="number" id="batchCount" class="batch-input" min="1" max="32" value="8" />
+                </label>
+              </div>
+              <p class="hint">Download up to this many files at once when async is enabled.</p>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -72,7 +122,10 @@
           <div class="settings-scroll">
             <div class="settings-block no-border">
               <span class="label-inline">Window</span>
-              <label class="chip"><input type="checkbox" id="chkFrameless" checked /> Frameless window</label>
+              <label class="toggle-card" data-tip="Hide the system title bar and use the app's own minimize, maximize, and close buttons. Requires restart.">
+                <span class="pill-switch"><input type="checkbox" id="chkFrameless" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                <span class="toggle-label">Frameless window</span>
+              </label>
               <p class="hint">Requires restart. Hides the system title bar and uses custom window buttons.</p>
             </div>
             <div class="settings-block">
@@ -81,7 +134,10 @@
                 <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>
               </p>
               <div class="row wrap">
-                <label class="chip"><input type="checkbox" id="chkBrowserCookies" checked /> Browser cookies</label>
+                <label class="toggle-card toggle-card--grow" data-tip="Read YouTube login cookies from your browser to reduce bot-check failures. Use Sign in if downloads still fail.">
+                  <span class="pill-switch"><input type="checkbox" id="chkBrowserCookies" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Browser cookies</span>
+                </label>
                 <select id="cookieBrowser" class="select-compact"></select>
                 <button type="button" id="signInBtn" class="btn-sm">Sign in</button>
               </div>
@@ -91,7 +147,7 @@
               </div>
             </div>
           </div>
-          <div class="settings-actions">
+          <div class="settings-actions settings-actions--row">
             <button type="button" id="saveSettingsBtn" class="action-btn">Save Settings</button>
             <button type="button" id="restartBtn" class="action-btn secondary-action">Restart Program</button>
           </div>
@@ -101,12 +157,14 @@
       <aside class="side-pane">
         <div class="status-head">
           <span class="label-inline">Queue</span>
+          <span id="queueSummary" class="queue-summary">0 / 0 files</span>
         </div>
         <ul id="queueList" class="queue-list"></ul>
-        <div class="progress-wrap">
-          <div id="progressBar" class="progress-bar"></div>
+        <p id="queueBytes" class="queue-bytes">—</p>
+        <div class="progress-wrap progress-wrap--overall">
+          <div id="overallProgressBar" class="progress-bar"></div>
         </div>
-        <p id="progressText" class="progress-text">Idle</p>
+        <p id="overallProgressText" class="progress-text">Idle</p>
         <button type="button" id="downloadBtn" class="download-btn">Download</button>
       </aside>
     </div>

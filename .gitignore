@@ -1,7 +1,7 @@
 .venv/
 .webview/
 output/
-settings.json
+.user/
 __pycache__/
 *.pyc
 .python-version

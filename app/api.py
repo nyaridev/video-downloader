@@ -25,8 +25,10 @@ def bind_webview_window(window: Any) -> None:
 class Api:
     def __init__(self) -> None:
         self._queue = DownloadQueue(self._emit)
-        self._output_dir = str(ensure_output_root())
         self._maximized = False
+        settings = load_settings()
+        saved_output = (settings.get("output_dir") or "").strip()
+        self._output_dir = saved_output or str(ensure_output_root())
 
     def _emit(self, event: str, data: dict[str, Any]) -> None:
         win = _webview_window
@@ -40,9 +42,11 @@ class Api:
 
     def get_defaults(self) -> dict[str, Any]:
         settings = load_settings()
+        output_dir = (settings.get("output_dir") or "").strip() or self._output_dir
+        self._output_dir = output_dir
         return {
             "root": str(ROOT),
-            "output_dir": self._output_dir,
+            "output_dir": output_dir,
             "video_qualities": formats.VIDEO_QUALITY_OPTIONS,
             "audio_qualities": formats.AUDIO_QUALITY_OPTIONS,
             "browser_options": list(BROWSER_OPTIONS),
@@ -50,24 +54,55 @@ class Api:
             "cookies_browser": settings["cookies_browser"],
             "cookies_file": settings["cookies_file"],
             "frameless": settings["frameless"],
+            "want_video": settings["want_video"],
+            "want_audio": settings["want_audio"],
+            "want_metadata": settings["want_metadata"],
+            "want_thumbnail": settings["want_thumbnail"],
+            "video_quality": settings.get("video_quality") or "Best",
+            "audio_quality": settings.get("audio_quality") or "Best",
+            "bundle": settings["bundle"],
+            "combine_streams": settings["combine_streams"],
+            "organize": settings["organize"],
+            "async_download": settings["async_download"],
+            "batch_count": settings["batch_count"],
         }
 
-    def save_app_settings(
-        self,
-        use_browser_cookies: bool,
-        cookies_browser: str,
-        cookies_file: str,
-        frameless: bool,
-    ) -> dict[str, Any]:
-        browser = cookies_browser if cookies_browser in BROWSER_OPTIONS else load_settings()["cookies_browser"]
-        return save_settings(
-            {
-                "use_browser_cookies": bool(use_browser_cookies),
-                "cookies_browser": browser,
-                "cookies_file": (cookies_file or "").strip(),
-                "frameless": bool(frameless),
-            }
-        )
+    def save_app_settings(self, settings: dict[str, Any]) -> dict[str, Any]:
+        current = load_settings()
+        browser = settings.get("cookies_browser") or current["cookies_browser"]
+        if browser not in BROWSER_OPTIONS:
+            browser = current["cookies_browser"]
+
+        try:
+            batch_count = int(settings.get("batch_count", current["batch_count"]))
+        except (TypeError, ValueError):
+            batch_count = current["batch_count"]
+        batch_count = max(1, min(32, batch_count))
+
+        output_dir = (settings.get("output_dir") or "").strip()
+        if output_dir:
+            self._output_dir = output_dir
+            ensure_output_root(output_dir)
+
+        updates = {
+            "use_browser_cookies": bool(settings.get("use_browser_cookies", True)),
+            "cookies_browser": browser,
+            "cookies_file": (settings.get("cookies_file") or "").strip(),
+            "frameless": bool(settings.get("frameless", True)),
+            "want_video": bool(settings.get("want_video", True)),
+            "want_audio": bool(settings.get("want_audio", True)),
+            "want_metadata": bool(settings.get("want_metadata", True)),
+            "want_thumbnail": bool(settings.get("want_thumbnail", True)),
+            "video_quality": settings.get("video_quality") or "Best",
+            "audio_quality": settings.get("audio_quality") or "Best",
+            "output_dir": self._output_dir,
+            "bundle": bool(settings.get("bundle", True)),
+            "combine_streams": bool(settings.get("combine_streams", True)),
+            "organize": bool(settings.get("organize", False)),
+            "async_download": bool(settings.get("async_download", True)),
+            "batch_count": batch_count,
+        }
+        return save_settings(updates)
 
     def restart_program(self) -> dict[str, Any]:
         threading.Thread(target=restart_application, daemon=True).start()
@@ -109,6 +144,7 @@ class Api:
         if path:
             self._output_dir = path
             ensure_output_root(path)
+            save_settings({"output_dir": path})
         return self._output_dir
 
     def enqueue_download(self, config: dict[str, Any]) -> dict[str, Any]:

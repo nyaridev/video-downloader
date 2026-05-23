@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
 
 from app.paths import ROOT
 
-SETTINGS_FILE = ROOT / "settings.json"
+USER_DIR = ROOT / ".user"
+SETTINGS_FILE = USER_DIR / "settings.json"
+LEGACY_SETTINGS_FILE = ROOT / "settings.json"
 
 BROWSER_OPTIONS = ("edge", "firefox", "chrome", "brave", "chromium", "opera", "vivaldi")
 CHROMIUM_BROWSERS = frozenset({"chrome", "edge", "brave", "chromium", "opera", "vivaldi"})
@@ -21,10 +24,30 @@ DEFAULTS: dict[str, Any] = {
     "cookies_browser": _DEFAULT_BROWSER,
     "cookies_file": "",
     "frameless": True,
+    "want_video": True,
+    "want_audio": True,
+    "want_metadata": True,
+    "want_thumbnail": True,
+    "video_quality": "Best",
+    "audio_quality": "Best",
+    "output_dir": "",
+    "bundle": True,
+    "combine_streams": True,
+    "organize": False,
+    "async_download": True,
+    "batch_count": 8,
 }
 
 
+def _migrate_legacy_settings() -> None:
+    if SETTINGS_FILE.is_file() or not LEGACY_SETTINGS_FILE.is_file():
+        return
+    USER_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(LEGACY_SETTINGS_FILE, SETTINGS_FILE)
+
+
 def load_settings() -> dict[str, Any]:
+    _migrate_legacy_settings()
     data = dict(DEFAULTS)
     if SETTINGS_FILE.is_file():
         try:
@@ -37,11 +60,25 @@ def load_settings() -> dict[str, Any]:
         data["cookies_browser"] = _DEFAULT_BROWSER
     data["frameless"] = bool(data.get("frameless", True))
     data["use_browser_cookies"] = bool(data.get("use_browser_cookies", True))
+    data["want_video"] = bool(data.get("want_video", True))
+    data["want_audio"] = bool(data.get("want_audio", True))
+    data["want_metadata"] = bool(data.get("want_metadata", True))
+    data["want_thumbnail"] = bool(data.get("want_thumbnail", True))
+    data["bundle"] = bool(data.get("bundle", True))
+    data["combine_streams"] = bool(data.get("combine_streams", True))
+    data["organize"] = bool(data.get("organize", False))
+    data["async_download"] = bool(data.get("async_download", True))
+    try:
+        batch = int(data.get("batch_count", 8))
+    except (TypeError, ValueError):
+        batch = 8
+    data["batch_count"] = max(1, min(32, batch))
     return data
 
 
 def save_settings(updates: dict[str, Any]) -> dict[str, Any]:
     data = load_settings()
     data.update(updates)
+    USER_DIR.mkdir(parents=True, exist_ok=True)
     SETTINGS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return data

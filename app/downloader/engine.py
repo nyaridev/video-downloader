@@ -21,6 +21,9 @@ from app.downloader.verify import collect_heights, expected_files_present
 LogFn = Callable[[str, str], None]
 ProgressFn = Callable[[dict[str, Any]], None]
 
+# Postprocessors that merge/remux separate video+audio streams.
+_MERGE_POSTPROCESSORS = frozenset({"FFmpegMerger", "Merger", "VideoRemuxer"})
+
 
 def _cleanup_merge_leftovers(target_dir: Path, video_id: str, *, keep_separate_audio: bool) -> None:
     """Remove intermediate .webm / partial files after merge into a single video."""
@@ -53,6 +56,7 @@ class DownloadEngine:
         self._log_raw = log
         self._progress = progress
         self._warned_ffmpeg = False
+        self._active_item: dict[str, str] = {}
 
     def _log(self, level: str, message: str) -> None:
         self._log_raw(level, normalize_log_message(message))
@@ -176,15 +180,18 @@ class DownloadEngine:
             self._log("warn", warn)
 
         outtmpl = str(target_dir / f"{video_id}.%(ext)s")
-        hook = self._make_hook(job.get("job_id"))
+        job_id = job.get("job_id")
+        hooks = self._download_hooks(job_id, combine_streams=combine_streams and want_video)
 
         self._log("info", f"Downloading: {title}")
 
         try:
             if want_metadata:
+                self._set_item(job_id, "metadata")
                 write_metadata(target_dir, video_id, info)
 
             if want_thumbnail:
+                self._set_item(job_id, "thumbnail")
                 self._run_download(
                     url,
                     {
@@ -193,11 +200,12 @@ class DownloadEngine:
                         "writethumbnail": True,
                         "writeinfojson": False,
                         "outtmpl": {"default": outtmpl},
-                        "progress_hooks": [hook],
+                        **hooks,
                     },
                 )
 
             if want_video:
+                self._set_item(job_id, "video")
                 self._run_download(
                     url,
                     {
@@ -213,7 +221,7 @@ class DownloadEngine:
                         "outtmpl": {"default": outtmpl},
                         "writethumbnail": False,
                         "writeinfojson": False,
-                        "progress_hooks": [hook],
+                        **hooks,
                     },
                 )
                 if combine_streams:
@@ -224,6 +232,7 @@ class DownloadEngine:
                     )
 
             if want_audio:
+                self._set_item(job_id, "audio")
                 self._run_download(
                     url,
                     {
@@ -240,7 +249,7 @@ class DownloadEngine:
                         "outtmpl": {"default": outtmpl},
                         "writethumbnail": False,
                         "writeinfojson": False,
-                        "progress_hooks": [hook],
+                        **self._download_hooks(job_id, combine_streams=False),
                     },
                 )
 
@@ -270,6 +279,18 @@ class DownloadEngine:
         opts.update(ytdlp_cookie_opts(settings))
         return opts
 
+    def _set_item(self, job_id: str | None, item: str) -> None:
+        if not job_id:
+            return
+        self._active_item[job_id] = item
+        self._progress({"job_id": job_id, "status": "downloading", "item": item})
+
+    def _download_hooks(self, job_id: str | None, *, combine_streams: bool) -> dict[str, list[Any]]:
+        opts: dict[str, list[Any]] = {"progress_hooks": [self._make_hook(job_id)]}
+        if combine_streams and job_id:
+            opts["postprocessor_hooks"] = [self._make_post_hook(job_id)]
+        return opts
+
     def _make_hook(self, job_id: str | None):
         def hook(status: dict[str, Any]) -> None:
             if status.get("status") not in ("downloading", "finished"):
@@ -277,6 +298,7 @@ class DownloadEngine:
             payload = {
                 "job_id": job_id,
                 "status": status.get("status"),
+                "item": self._active_item.get(job_id) if job_id else None,
                 "filename": status.get("filename")
                 or (status.get("info_dict") or {}).get("title"),
                 "downloaded_bytes": status.get("downloaded_bytes", 0),
@@ -286,5 +308,22 @@ class DownloadEngine:
                 "_percent_str": strip_ansi(status.get("_percent_str") or ""),
             }
             self._progress(payload)
+
+        return hook
+
+    def _make_post_hook(self, job_id: str | None):
+        def hook(status: dict[str, Any]) -> None:
+            pp_name = status.get("postprocessor") or ""
+            if pp_name not in _MERGE_POSTPROCESSORS:
+                return
+            pp_status = status.get("status")
+            if pp_status in ("started", "processing"):
+                if job_id:
+                    self._active_item[job_id] = "combining"
+                self._progress({"job_id": job_id, "status": "combining", "item": "combining"})
+            elif pp_status == "finished":
+                if job_id:
+                    self._active_item.pop(job_id, None)
+                self._progress({"job_id": job_id, "status": "downloading"})
 
         return hook
