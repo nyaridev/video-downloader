@@ -127,11 +127,11 @@ def resolve_download_dir(
             base = output_root / DEFAULT_VIDEOS_FOLDER
         elif mode == "playlist":
             base = output_root / playlist_folder
-            if group_playlist_channel and (playlist_title or playlist_id):
+            if playlist_title or playlist_id:
                 base = base / playlist_subfolder()
         elif mode == "channel":
             base = output_root / channel_folder
-            if group_playlist_channel and (channel_handle or channel_id):
+            if channel_handle or channel_id:
                 base = base / channel_subfolder()
         else:
             base = output_root / DEFAULT_VIDEOS_FOLDER

@@ -180,22 +180,22 @@
               </div>
               <div class="format-field-row">
                 <div class="format-field">
-                  <label class="format-field-label" for="playlistFolder">Playlist folder</label>
-                  <input id="playlistFolder" type="text" class="path-input format-input" spellcheck="false" />
-                </div>
-                <div class="format-field">
-                  <label class="format-field-label" for="playlistNameTemplate">Playlist name</label>
-                  <input id="playlistNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
-                </div>
-              </div>
-              <div class="format-field-row">
-                <div class="format-field">
                   <label class="format-field-label" for="channelFolder">Channel folder</label>
                   <input id="channelFolder" type="text" class="path-input format-input" spellcheck="false" />
                 </div>
                 <div class="format-field">
+                  <label class="format-field-label" for="playlistFolder">Playlist folder</label>
+                  <input id="playlistFolder" type="text" class="path-input format-input" spellcheck="false" />
+                </div>
+              </div>
+              <div class="format-field-row">
+                <div class="format-field">
                   <label class="format-field-label" for="channelNameTemplate">Channel name</label>
                   <input id="channelNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
+                </div>
+                <div class="format-field">
+                  <label class="format-field-label" for="playlistNameTemplate">Playlist name</label>
+                  <input id="playlistNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
                 </div>
               </div>
               <p class="hint format-legend">
@@ -206,8 +206,9 @@
                 <code>{playlist}</code> playlist title.
                 Playlist name placeholders: <code>{playlist}</code>, <code>{playlist_id}</code>, <code>{id}</code> (playlist ID).
                 Channel name placeholders: <code>{channel}</code>, <code>{channel_id}</code>, <code>{id}</code> (channel ID).
-                Playlist and channel folder names apply to the Organized layout category folders.
-                Playlist and channel name templates apply when grouping is enabled (Flat or Organized).
+                Channel and playlist folder names set the Organized layout category folders.
+                Channel and playlist name templates always apply under those folders in Organized layout.
+                With Flat layout, name templates apply when Group playlist/channel is enabled.
                 Metadata is saved as the file name plus <code>.meta.json</code>.
               </p>
             </div>
@@ -284,7 +285,7 @@
           <div id="overallProgressBar" class="progress-bar"></div>
         </div>
         <p id="overallProgressText" class="progress-text">Idle</p>
-        <button type="button" id="retryAllBtn" class="retry-all-btn" hidden>Retry All</button>
+        <button type="button" id="retryAllBtn" class="retry-all-btn" hidden>Retry all failed downloads</button>
         <div id="queueViewPicker" class="queue-view-picker" hidden>
           <button
             type="button"

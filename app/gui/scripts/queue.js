@@ -198,7 +198,7 @@ function updateRetryAllButton(jobs, view) {
   const errorJobs = jobs.filter((j) => j.status === "error").length;
   if (errorJobs > 0) {
     btn.hidden = false;
-    btn.textContent = errorJobs === 1 ? "Retry failed download" : `Retry All (${errorJobs})`;
+    btn.textContent = errorJobs === 1 ? "Retry failed download" : `Retry all failed downloads (${errorJobs})`;
     btn.title = `Retry ${errorJobs} failed download(s) in this view`;
   } else {
     btn.hidden = true;
