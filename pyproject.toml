@@ -1,0 +1,13 @@
+[project]
+name = "video-downloader"
+version = "1.0.0"
+description = "YouTube video/audio downloader with a local web GUI"
+requires-python = ">=3.10"
+dependencies = [
+    "yt-dlp>=2025.1.1",
+    "pywebview>=5.4",
+    "browser-cookie3>=0.19.1",
+]
+
+[tool.uv]
+package = false

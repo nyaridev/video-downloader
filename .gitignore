@@ -1,0 +1,7 @@
+.venv/
+.webview/
+output/
+settings.json
+__pycache__/
+*.pyc
+.python-version
