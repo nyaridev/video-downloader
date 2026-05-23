@@ -149,18 +149,18 @@ class Api:
         config["concurrency"] = normalize_concurrency(config.get("concurrency", settings["concurrency"]))
         ensure_output_root(config["output_dir"])
         job_id = self._queue.add(config)
-        return {"job_id": job_id, "queue": self._queue.list_jobs()}
+        return {"job_id": job_id, **self._queue.queue_state()}
 
-    def get_queue(self) -> list[dict[str, Any]]:
-        return self._queue.list_jobs()
+    def get_queue(self) -> dict[str, Any]:
+        return self._queue.queue_state()
 
     def remove_queue_job(self, job_id: str) -> dict[str, Any]:
         removed = self._queue.remove(job_id)
-        return {"ok": removed, "queue": self._queue.list_jobs()}
+        return {"ok": removed, **self._queue.queue_state()}
 
-    def clear_queue(self) -> dict[str, Any]:
-        count = self._queue.clear()
-        return {"ok": True, "removed": count, "queue": self._queue.list_jobs()}
+    def clear_queue(self, view_id: str | None = None) -> dict[str, Any]:
+        count = self._queue.clear_view(view_id)
+        return {"ok": True, "removed": count, **self._queue.queue_state()}
 
     def _pick_file(self, filetypes: list[tuple[str, str]], initial: str) -> str | None:
         result: list[str | None] = [None]

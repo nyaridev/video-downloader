@@ -2,8 +2,14 @@ let state = {
   mode: "video",
   outputDir: "",
   frameless: true,
-  jobs: [],
+  allJobs: [],
+  views: [],
+  activeViewId: "main",
 };
+
+const MAIN_VIEW_ID = "main";
+
+let queueRevision = 0;
 
 let saveTimer = null;
 
@@ -124,6 +130,17 @@ function displayActiveItem(job) {
 function truncateUrl(url, max = 48) {
   if (!url) return "";
   return url.length > max ? `${url.slice(0, max)}…` : url;
+}
+
+function truncateTitle(title, max = 20) {
+  if (!title) return "";
+  return title.length > max ? `${title.slice(0, max)}…` : title;
+}
+
+function queueItemDisplayTitle(job) {
+  if (job.title) return truncateTitle(job.title, 20);
+  if (job.url) return truncateUrl(job.url, 20);
+  return "Download";
 }
 
 function statusClass(status) {
@@ -274,6 +291,43 @@ function readConfig() {
   };
 }
 
+function activeViewMeta() {
+  return state.views.find((v) => v.id === state.activeViewId) || { id: MAIN_VIEW_ID, kind: "main" };
+}
+
+function jobsForActiveView() {
+  const viewId = state.activeViewId || MAIN_VIEW_ID;
+  return state.allJobs.filter((j) => (j.view_id || MAIN_VIEW_ID) === viewId);
+}
+
+function updateQueueViewSelect() {
+  const select = $("queueViewSelect");
+  if (!select) return;
+
+  const hasBatchViews = state.views.some((v) => v.kind !== "main");
+  select.hidden = !hasBatchViews;
+  if (!hasBatchViews) return;
+
+  const prev = select.value;
+  select.innerHTML = "";
+  state.views.forEach((view) => {
+    const opt = document.createElement("option");
+    opt.value = view.id;
+    opt.textContent = view.name || view.id;
+    select.appendChild(opt);
+  });
+  select.value = state.activeViewId || prev || MAIN_VIEW_ID;
+}
+
+function setActiveView(viewId) {
+  state.activeViewId = viewId || MAIN_VIEW_ID;
+  const select = $("queueViewSelect");
+  if (select && !select.hidden) {
+    select.value = state.activeViewId;
+  }
+  renderQueueList();
+}
+
 function aggregateQueueStats(jobs) {
   const totalJobs = jobs.length;
   const doneJobs = jobs.filter((j) => j.status === "done").length;
@@ -309,9 +363,42 @@ function aggregateQueueStats(jobs) {
 }
 
 function updateQueueSummary(jobs) {
+  const view = activeViewMeta();
   const stats = aggregateQueueStats(jobs);
   const summary = $("queueSummary");
   const bytes = $("queueBytes");
+
+  if (view.kind !== "main") {
+    const finished = view.finished || 0;
+    const total = view.total || 0;
+    const pending = view.pending || 0;
+    const running = view.running || 0;
+
+    if (view.status === "preparing") {
+      summary.textContent = "Fetching entries...";
+      bytes.textContent = "—";
+      return;
+    }
+
+    summary.textContent = `${finished} / ${total} videos`;
+    if (running > 0) {
+      summary.textContent += ` · ${running} downloading`;
+    } else if (pending > 0) {
+      summary.textContent += ` · ${pending} waiting`;
+    }
+
+    const byteParts = [];
+    if (stats.total > 0) {
+      byteParts.push(`${formatBytes(stats.downloaded)} / ${formatBytes(stats.total)}`);
+    } else if (stats.runningJobs > 0) {
+      byteParts.push(`${formatBytes(stats.downloaded)} downloaded`);
+    }
+    if (stats.speed > 0) {
+      byteParts.push(formatSpeed(stats.speed));
+    }
+    bytes.textContent = byteParts.length ? byteParts.join(" · ") : "—";
+    return;
+  }
 
   if (!jobs.length) {
     summary.textContent = "0 / 0 files";
@@ -343,9 +430,14 @@ function updateQueueSummary(jobs) {
 function setOverallProgress(jobs, currentProgress) {
   const bar = $("overallProgressBar");
   const text = $("overallProgressText");
+  const view = activeViewMeta();
   const stats = aggregateQueueStats(jobs);
 
   let pct = stats.pct;
+
+  if (view.kind !== "main" && view.total > 0) {
+    pct = Math.min(100, ((view.finished || 0) / view.total) * 100);
+  }
 
   if (currentProgress && currentProgress.status === "downloading") {
     const curTotal = currentProgress.total_bytes || 0;
@@ -355,9 +447,20 @@ function setOverallProgress(jobs, currentProgress) {
     }
   }
 
-  if (!jobs.length) {
+  if (!jobs.length && view.status !== "preparing") {
+    if (view.kind !== "main" && view.total > 0 && (view.finished || 0) >= view.total) {
+      bar.style.width = "100%";
+      text.textContent = view.status === "cancelled" ? "Batch cancelled" : "All downloads complete";
+      return;
+    }
     bar.style.width = "0%";
     text.textContent = "Idle";
+    return;
+  }
+
+  if (view.status === "preparing") {
+    bar.style.width = "0%";
+    text.textContent = "Preparing batch...";
     return;
   }
 
@@ -388,40 +491,67 @@ function setOverallProgress(jobs, currentProgress) {
 async function removeQueueJob(jobId) {
   try {
     const res = await apiCall("remove_queue_job", jobId);
-    renderQueue(res.queue);
+    applyQueueState(res);
   } catch (err) {
     log("error", err.message);
   }
 }
 
-async function clearQueue() {
+async function cancelActiveView() {
   try {
-    const res = await apiCall("clear_queue");
-    renderQueue(res.queue);
+    const res = await apiCall("clear_queue", state.activeViewId);
+    applyQueueState(res);
     if (res.removed > 0) {
-      log("info", `Cleared ${res.removed} item(s) from queue.`);
+      log("info", `Cancelled ${res.removed} item(s) in this queue view.`);
     }
   } catch (err) {
     log("error", err.message);
   }
 }
 
-function renderQueue(jobs) {
-  state.jobs = jobs || [];
+function applyQueueState(data, revision) {
+  const rev = revision ?? data?.revision;
+  if (rev != null && rev < queueRevision) {
+    return;
+  }
+  if (rev != null) {
+    queueRevision = rev;
+  }
+
+  state.allJobs = data?.jobs || [];
+  state.views = data?.views || [{ id: MAIN_VIEW_ID, name: "Main", kind: "main" }];
+
+  updateQueueViewSelect();
+  renderQueueList();
+}
+
+function renderQueueList() {
+  const jobs = jobsForActiveView();
+  const view = activeViewMeta();
   const list = $("queueList");
   list.innerHTML = "";
 
-  if (!state.jobs.length) {
+  if (view.status === "preparing") {
     const li = document.createElement("li");
     li.className = "queue-item queue-item--empty";
-    li.textContent = "Queue is empty";
+    li.textContent = "Fetching playlist or channel entries...";
     list.appendChild(li);
-    updateQueueSummary([]);
-    setOverallProgress([]);
+    updateQueueSummary(jobs);
+    setOverallProgress(jobs);
     return;
   }
 
-  [...state.jobs].reverse().forEach((job) => {
+  if (!jobs.length) {
+    const li = document.createElement("li");
+    li.className = "queue-item queue-item--empty";
+    li.textContent = view.kind === "main" ? "Queue is empty" : "No active downloads in this view";
+    list.appendChild(li);
+    updateQueueSummary(jobs);
+    setOverallProgress(jobs);
+    return;
+  }
+
+  [...jobs].reverse().forEach((job) => {
     const status = job.status;
     const li = document.createElement("li");
     li.className = `queue-item ${statusClass(status)}`;
@@ -432,12 +562,16 @@ function renderQueue(jobs) {
 
     const headLeft = document.createElement("div");
     headLeft.className = "queue-item-head-left";
-    headLeft.innerHTML = `<strong>${job.mode || "video"}</strong><span class="queue-status-badge">${statusLabel(status)}</span>`;
+    const indexLabel =
+      job.entry_index != null && job.entry_total != null
+        ? `<span class="queue-item-index">${job.entry_index}/${job.entry_total}</span>`
+        : "";
+    headLeft.innerHTML = `${indexLabel}<strong>${queueItemDisplayTitle(job)}</strong><span class="queue-status-badge">${statusLabel(status)}</span>`;
 
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";
     closeBtn.className = "queue-item-close";
-    closeBtn.setAttribute("aria-label", "Remove from queue");
+    closeBtn.setAttribute("aria-label", "Cancel download");
     closeBtn.textContent = "×";
     closeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -448,8 +582,10 @@ function renderQueue(jobs) {
 
     const url = document.createElement("div");
     url.className = "queue-item-url";
-    url.textContent = truncateUrl(job.url);
-    url.title = job.url;
+    if (job.url) {
+      url.textContent = truncateUrl(job.url, 56);
+      url.title = job.url;
+    }
 
     const p = job.progress || {};
     const activeItem = displayActiveItem(job);
@@ -488,28 +624,26 @@ function renderQueue(jobs) {
     }
     if (metaParts.length) {
       meta.textContent = metaParts.join(" · ");
-    } else if (job.title) {
-      meta.textContent = job.title;
-    } else {
-      meta.textContent = statusLabel(status);
     }
 
-    const parts = [head, url, tags];
+    const parts = [head];
+    if (url.textContent) parts.push(url);
+    parts.push(tags);
     if (fileLine.textContent) parts.push(fileLine);
     parts.push(progressWrap, meta);
     li.append(...parts);
     list.appendChild(li);
   });
 
-  updateQueueSummary(state.jobs);
-  setOverallProgress(state.jobs);
+  updateQueueSummary(jobs);
+  setOverallProgress(jobs);
 }
 
 function setProgress(data) {
   if (!data) return;
 
-  if (data.job_id && state.jobs.length) {
-    const job = state.jobs.find((j) => j.id === data.job_id);
+  if (data.job_id && state.allJobs.length) {
+    const job = state.allJobs.find((j) => j.id === data.job_id);
     if (job) {
       const prev = job.progress || {};
       if (data.status === "combining") {
@@ -541,18 +675,20 @@ function setProgress(data) {
           job.progress.percent = 100;
         }
       }
+      if ((job.view_id || MAIN_VIEW_ID) === state.activeViewId) {
+        renderQueueList();
+      }
     }
-    renderQueue(state.jobs);
   }
 
-  setOverallProgress(state.jobs, data);
+  setOverallProgress(jobsForActiveView(), data);
 }
 
 window.dispatchBackend = function (payload) {
   const { event, data } = payload;
   if (event === "log") log(data.level, data.message);
   if (event === "progress") setProgress(data);
-  if (event === "queue") renderQueue(data.jobs);
+  if (event === "queue") applyQueueState(data);
   if (event === "job_status") log("info", `Job ${data.id}: ${data.status}`);
 };
 
@@ -684,7 +820,10 @@ async function init() {
       $("chkFrameless").checked = defaults.frameless !== false;
       applyFramelessUi(defaults.frameless !== false);
       applyDownloadDefaults(defaults);
-      renderQueue([]);
+      queueRevision = 0;
+      state.views = [{ id: MAIN_VIEW_ID, name: "Main", kind: "main" }];
+      state.activeViewId = MAIN_VIEW_ID;
+      applyQueueState({ jobs: [], views: state.views, active_view: MAIN_VIEW_ID, revision: 0 });
       log("info", `Ready. Output: ${defaults.output_dir}`);
     } catch (err) {
       log("error", err.message);
@@ -760,8 +899,12 @@ async function init() {
     setConcurrency($("concurrencyInput").value);
   });
 
-  $("clearQueueBtn").addEventListener("click", () => {
-    clearQueue();
+  $("cancelViewBtn").addEventListener("click", () => {
+    cancelActiveView();
+  });
+
+  $("queueViewSelect")?.addEventListener("change", (e) => {
+    setActiveView(e.target.value);
   });
 
   $("downloadBtn").addEventListener("click", async () => {
@@ -771,7 +914,13 @@ async function init() {
       config.concurrency = getConcurrency();
       await saveAppSettings({ silent: true });
       const res = await apiCall("enqueue_download", config);
-      renderQueue(res.queue);
+      applyQueueState(res);
+      const isBatch = config.mode === "playlist" || config.mode === "channel";
+      if (isBatch && res.active_view) {
+        setActiveView(res.active_view);
+      } else {
+        setActiveView(MAIN_VIEW_ID);
+      }
       log("info", `Download queued (${res.job_id})`);
       $("url").value = "";
       setPage("download");

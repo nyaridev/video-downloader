@@ -933,6 +933,34 @@ body.frameless .console-pane {
   background: var(--download-hover);
 }
 
+.queue-view-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.queue-view-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.queue-view-select[hidden] {
+  display: none;
+}
+
+.queue-item-index {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .console-pane {
   flex-shrink: 0;
   display: flex;

@@ -72,53 +72,24 @@ class DownloadEngine:
 
     def download_job(self, job: dict[str, Any]) -> dict[str, Any]:
         self._warn_ffmpeg_once()
+        return self.download_single(job)
+
+    def download_single(self, job: dict[str, Any]) -> dict[str, Any]:
+        if self._cancelled(job):
+            return {"ok": False, "error": "Cancelled"}
         url = job["url"].strip()
-        mode = job.get("mode", "video")
         opts_base = self._base_opts(job)
+        return self._download_one(
+            url,
+            job,
+            opts_base,
+            playlist_title=job.get("playlist_title"),
+            channel_handle=job.get("channel_handle"),
+        )
 
-        if mode == "video":
-            return self._download_one(url, job, opts_base, playlist_title=None, channel_handle=None)
-
-        extract_mode = "flat" if mode in ("playlist", "channel") else "default"
-        list_opts = {**opts_base, "extract_flat": extract_mode}
-        browser = (job.get("cookie_settings") or {}).get("cookies_browser")
-        try:
-            info = extract_info(url, list_opts, cookie_browser=browser)
-        except DownloadError as exc:
-            self._log("error", str(exc))
-            return {"ok": False, "error": str(exc)}
-
-        entries = list(info.get("entries") or [info])
-        playlist_title = info.get("title") if mode == "playlist" else None
-        channel_handle = info.get("uploader_id") or info.get("channel_id") or info.get("uploader")
-        if mode == "channel":
-            channel_handle = info.get("channel") or info.get("uploader") or channel_handle
-
-        results = []
-        for idx, entry in enumerate(entries, start=1):
-            if not entry:
-                continue
-            entry = dict(entry)
-            vid = entry.get("id")
-            video_url = entry.get("webpage_url") or entry.get("url")
-            if vid and (not video_url or "watch" not in str(video_url)):
-                video_url = f"https://www.youtube.com/watch?v={vid}"
-            if not video_url:
-                continue
-
-            self._log("info", f"Processing item {idx}/{len(entries)}...")
-            result = self._download_one(
-                video_url,
-                job,
-                opts_base,
-                playlist_title=playlist_title,
-                channel_handle=channel_handle,
-            )
-            results.append(result)
-            if job.get("cancel_flag", {}).get("cancel"):
-                break
-
-        return {"ok": True, "results": results}
+    @staticmethod
+    def _cancelled(job: dict[str, Any]) -> bool:
+        return bool(job.get("cancel_flag", {}).get("cancel"))
 
     def _download_one(
         self,
@@ -146,6 +117,7 @@ class DownloadEngine:
 
         video_id = info.get("id") or "unknown"
         title = info.get("title") or video_id
+        job["title"] = title
         output_root = Path(job["output_dir"])
         organize = job.get("organize", False)
         bundle = job.get("bundle", False)
@@ -174,6 +146,9 @@ class DownloadEngine:
             self._log("warn", msg)
             return {"ok": True, "skipped": True, "title": title, "id": video_id}
 
+        if self._cancelled(job):
+            return {"ok": False, "error": "Cancelled"}
+
         heights = collect_heights(info)
         _, warn = pick_nearest_height(video_quality, heights)
         if warn:
@@ -187,10 +162,14 @@ class DownloadEngine:
 
         try:
             if want_metadata:
+                if self._cancelled(job):
+                    return {"ok": False, "error": "Cancelled"}
                 self._set_item(job_id, "metadata")
                 write_metadata(target_dir, video_id, info)
 
             if want_thumbnail:
+                if self._cancelled(job):
+                    return {"ok": False, "error": "Cancelled"}
                 self._set_item(job_id, "thumbnail")
                 self._run_download(
                     url,
@@ -205,6 +184,8 @@ class DownloadEngine:
                 )
 
             if want_audio:
+                if self._cancelled(job):
+                    return {"ok": False, "error": "Cancelled"}
                 self._set_item(job_id, "audio")
                 self._run_download(
                     url,
@@ -227,6 +208,8 @@ class DownloadEngine:
                 )
 
             if want_video:
+                if self._cancelled(job):
+                    return {"ok": False, "error": "Cancelled"}
                 self._set_item(job_id, "video")
                 self._run_download(
                     url,
@@ -268,7 +251,7 @@ class DownloadEngine:
     def _base_opts(self, job: dict[str, Any]) -> dict[str, Any]:
         settings = job.get("cookie_settings") or load_settings()
         opts: dict[str, Any] = {
-            "noplaylist": job.get("mode") == "video",
+            "noplaylist": True,
             "ignoreerrors": False,
             "no_warnings": False,
             "quiet": True,
