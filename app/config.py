@@ -31,7 +31,7 @@ LEGACY_SETTINGS_FILE = ROOT / "settings.json"
 BROWSER_OPTIONS = ("edge", "firefox", "chrome", "brave", "chromium", "opera", "vivaldi")
 CHROMIUM_BROWSERS = frozenset({"chrome", "edge", "brave", "chromium", "opera", "vivaldi"})
 THEME_OPTIONS = ("default", "meta", "amethyst")
-LANGUAGE_OPTIONS = ("en", "pl", "zh")
+LANGUAGE_OPTIONS = ("en", "pl", "szl", "cs", "ja", "ko", "zh")
 
 _DEFAULT_BROWSER = "edge" if sys.platform == "win32" else "firefox"
 
@@ -119,8 +119,6 @@ def _map_locale_to_language(tag: str) -> str | None:
     base = normalized.split("_")[0]
     if base in LANGUAGE_OPTIONS:
         return base
-    if base == "zh":
-        return "zh"
     return None
 
 
@@ -129,13 +127,21 @@ def _windows_ui_language() -> str | None:
         return None
     primary_to_language = {
         0x09: "en",
+        0x05: "cs",
+        0x11: "ja",
+        0x12: "ko",
         0x15: "pl",
         0x04: "zh",
+    }
+    full_to_language = {
+        0x7809: "szl",
     }
     try:
         import ctypes
 
         lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+        if lang_id in full_to_language:
+            return full_to_language[lang_id]
         return primary_to_language.get(lang_id & 0x3FF)
     except Exception:
         return None

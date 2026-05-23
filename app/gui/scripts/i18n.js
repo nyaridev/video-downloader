@@ -1,12 +1,20 @@
 import en from "../i18n/en.js";
 import pl from "../i18n/pl.js";
 import zh from "../i18n/zh.js";
+import cs from "../i18n/cs.js";
+import ja from "../i18n/ja.js";
+import ko from "../i18n/ko.js";
+import szl from "../i18n/szl.js";
 import { syncCustomSelect } from "./custom-select.js";
 import { $ } from "./dom.js";
 
 export const LOCALES = {
   en: { id: "en", label: "English", strings: en },
   pl: { id: "pl", label: "Polski", strings: pl },
+  szl: { id: "szl", label: "Ślōnski", strings: szl },
+  cs: { id: "cs", label: "Čeština", strings: cs },
+  ja: { id: "ja", label: "日本語", strings: ja },
+  ko: { id: "ko", label: "한국어", strings: ko },
   zh: { id: "zh", label: "中文 (简体)", strings: zh },
 };
 
@@ -271,11 +279,21 @@ export function readLanguageFromForm() {
   return normalizeLanguageId($("languageSelect")?.value);
 }
 
+const HTML_LANG_BY_LOCALE = {
+  en: "en",
+  pl: "pl",
+  szl: "szl",
+  cs: "cs",
+  ja: "ja",
+  ko: "ko",
+  zh: "zh-CN",
+};
+
 export function setLanguage(localeId) {
   const id = normalizeLanguageId(localeId);
   currentLocale = id;
   strings = LOCALES[id].strings;
-  document.documentElement.lang = id === "zh" ? "zh-CN" : id;
+  document.documentElement.lang = HTML_LANG_BY_LOCALE[id] ?? id;
   applyTranslations();
   return id;
 }
