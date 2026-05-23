@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "기본",
   "settings.themeMeta": "Meta",
   "settings.themeAmethyst": "Amethyst",
+  "settings.themeAnime": "애니메",
   "settings.language": "언어",
   "settings.appearanceHint": "즉시 적용됩니다. 다른 설정과 함께 저장됩니다.",
   "settings.frameless": "프레임 없는 창",

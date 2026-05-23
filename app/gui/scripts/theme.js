@@ -1,5 +1,6 @@
 import { syncCustomSelect } from "./custom-select.js";
 import { $ } from "./dom.js";
+import { startAnimeTheme, stopAnimeTheme } from "../themes/Anime/scripts/index.js";
 
 export const THEMES = {
   default: {
@@ -17,6 +18,11 @@ export const THEMES = {
     label: "Amethyst",
     href: "themes/Amethyst/theme.css",
   },
+  anime: {
+    id: "anime",
+    label: "Anime",
+    href: "themes/Anime/theme.css",
+  },
 };
 
 const THEME_LINK_ID = "themeStylesheet";
@@ -33,6 +39,10 @@ function themeHref(themeId) {
 
 export function applyTheme(themeId) {
   const id = normalizeThemeId(themeId);
+  const previous = document.documentElement.dataset.theme;
+  if (previous === "anime" && id !== "anime") {
+    stopAnimeTheme();
+  }
   const link = document.getElementById(THEME_LINK_ID);
   const href = themeHref(id);
   if (link) {
@@ -45,6 +55,9 @@ export function applyTheme(themeId) {
     document.head.appendChild(el);
   }
   document.documentElement.dataset.theme = id;
+  if (id === "anime") {
+    startAnimeTheme();
+  }
 }
 
 export function setThemeSelectValue(themeId) {

@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "默认",
   "settings.themeMeta": "Meta",
   "settings.themeAmethyst": "紫晶",
+  "settings.themeAnime": "动漫",
   "settings.language": "语言",
   "settings.appearanceHint": "立即生效，并与其他设置一起保存。",
   "settings.frameless": "无边框窗口",

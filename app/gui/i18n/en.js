@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "Default",
   "settings.themeMeta": "Meta",
   "settings.themeAmethyst": "Amethyst",
+  "settings.themeAnime": "Anime",
   "settings.language": "Language",
   "settings.appearanceHint": "Applies immediately. Saved with your other settings.",
   "settings.frameless": "Frameless window",

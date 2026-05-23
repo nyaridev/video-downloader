@@ -15,6 +15,7 @@ from app.utils.naming import (
     DEFAULT_PLAYLIST_NAME_TEMPLATE,
     normalize_name_template,
 )
+from app.gui.themes.anime_nekos_background import fetch_random_background_image
 from app.gui.dialogs import pick_file, pick_folder
 from app.paths import DEFAULT_CHANNEL_FOLDER, DEFAULT_OUTPUT, DEFAULT_PLAYLIST_FOLDER, ROOT, ensure_output_root, normalize_layout_folder_name, normalize_output_dir
 from app.queue import DownloadQueue
@@ -190,6 +191,9 @@ class Api:
     def close_window(self) -> None:
         if _webview_window:
             _webview_window.destroy()
+
+    def get_anime_background(self) -> dict[str, Any]:
+        return fetch_random_background_image()
 
     def browse_cookies_file(self) -> str:
         path = pick_file(

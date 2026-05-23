@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "Výchozí",
   "settings.themeMeta": "Meta",
   "settings.themeAmethyst": "Ametyst",
+  "settings.themeAnime": "Anime",
   "settings.language": "Jazyk",
   "settings.appearanceHint": "Použije se okamžitě. Uloží se spolu s ostatním nastavením.",
   "settings.frameless": "Okno bez rámečku",

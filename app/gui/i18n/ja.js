@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "デフォルト",
   "settings.themeMeta": "Meta",
   "settings.themeAmethyst": "Amethyst",
+  "settings.themeAnime": "アニメ",
   "settings.language": "言語",
   "settings.appearanceHint": "すぐに反映されます。他の設定と一緒に保存されます。",
   "settings.frameless": "フレームレスウィンドウ",

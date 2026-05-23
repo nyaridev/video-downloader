@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "Domyślny",
   "settings.themeMeta": "Meta",
   "settings.themeAmethyst": "Ametyst",
+  "settings.themeAnime": "Anime",
   "settings.language": "Gŏdka",
   "settings.appearanceHint": "Stosuje sie natychmiast. Zapisywane z inkszymi ustawieniami.",
   "settings.frameless": "Ôkno bez ramki",

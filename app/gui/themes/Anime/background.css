@@ -1,0 +1,65 @@
+html[data-theme="anime"],
+html[data-theme="anime"] body {
+  background: transparent;
+}
+
+html[data-theme="anime"] body.frameless {
+  background: transparent;
+}
+
+html[data-theme="anime"] body.frameless .app {
+  background: transparent;
+  border-color: var(--frame-outline);
+}
+
+html[data-theme="anime"] .app-body {
+  background: transparent;
+}
+
+.anime-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.anime-background__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(244, 114, 182, 0.1), transparent 55%),
+    linear-gradient(180deg, rgba(8, 6, 16, 0.28) 0%, rgba(8, 6, 16, 0.48) 100%);
+}
+
+.anime-background__layer {
+  position: absolute;
+  inset: -2%;
+  z-index: 1;
+  width: calc(100% + 4%);
+  height: calc(100% + 4%);
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transform: scale(1.03);
+  transition: opacity 3.5s ease-in-out;
+  will-change: opacity;
+}
+
+.anime-background__layer.is-visible {
+  opacity: 1;
+}
+
+html[data-theme="anime"] .app {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme="anime"] .anime-background {
+  display: block;
+}
+
+html:not([data-theme="anime"]) .anime-background {
+  display: none;
+}

@@ -261,6 +261,7 @@ function updateThemeSelectLabels() {
     default: t("settings.themeDefault"),
     meta: t("settings.themeMeta"),
     amethyst: t("settings.themeAmethyst"),
+    anime: t("settings.themeAnime"),
   };
   select.querySelectorAll("option").forEach((option) => {
     if (labels[option.value]) option.textContent = labels[option.value];

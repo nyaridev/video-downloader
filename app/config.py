@@ -30,7 +30,7 @@ LEGACY_SETTINGS_FILE = ROOT / "settings.json"
 
 BROWSER_OPTIONS = ("edge", "firefox", "chrome", "brave", "chromium", "opera", "vivaldi")
 CHROMIUM_BROWSERS = frozenset({"chrome", "edge", "brave", "chromium", "opera", "vivaldi"})
-THEME_OPTIONS = ("default", "meta", "amethyst")
+THEME_OPTIONS = ("default", "meta", "amethyst", "anime")
 LANGUAGE_OPTIONS = ("en", "pl", "szl", "cs", "ja", "ko", "zh")
 
 _DEFAULT_BROWSER = "edge" if sys.platform == "win32" else "firefox"
