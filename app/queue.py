@@ -125,11 +125,14 @@ class DownloadQueue:
 
     def _job_snapshot(self, job: dict[str, Any]) -> dict[str, Any]:
         progress = job.get("progress") or {}
+        status = job.get("status")
+        if status in ("queued", "running") and job.get("cancel_flag", {}).get("cancel"):
+            status = "cancelled"
         return {
             "id": job["id"],
             "url": job["url"],
             "mode": job.get("mode"),
-            "status": job.get("status"),
+            "status": status,
             "title": job.get("title"),
             "items": self._job_items(job),
             "progress": progress,
@@ -144,7 +147,7 @@ class DownloadQueue:
         if view.get("kind") == "main":
             jobs = [j for j in self._jobs if j.get("view_id", MAIN_VIEW_ID) == MAIN_VIEW_ID]
             view["total"] = len(jobs)
-            view["finished"] = sum(1 for j in jobs if j.get("status") in ("done", "error"))
+            view["finished"] = sum(1 for j in jobs if j.get("status") in ("done", "error", "cancelled"))
             view["running"] = sum(1 for j in jobs if j.get("status") == "running")
             view["pending"] = sum(1 for j in jobs if j.get("status") == "queued")
             return view
@@ -163,7 +166,7 @@ class DownloadQueue:
         return sum(
             1
             for j in self._jobs
-            if j.get("batch_id") == batch_id and j.get("status") in ("done", "error")
+            if j.get("batch_id") == batch_id and j.get("status") in ("done", "error", "cancelled")
         )
 
     def list_jobs(self) -> list[dict[str, Any]]:
@@ -309,8 +312,14 @@ class DownloadQueue:
         with self._lock:
             return self._spawn_batch_entry_locked(batch_id)
 
+    @staticmethod
+    def _cancel_job_locked(job: dict[str, Any]) -> None:
+        job.setdefault("cancel_flag", {"cancel": False})["cancel"] = True
+        if job["status"] == "queued":
+            job["status"] = "cancelled"
+
     def remove(self, job_id: str) -> bool:
-        removed = False
+        changed = False
         batch_id: str | None = None
         view_id = MAIN_VIEW_ID
         with self._lock:
@@ -319,48 +328,104 @@ class DownloadQueue:
                     continue
                 batch_id = job.get("batch_id")
                 view_id = job.get("view_id", MAIN_VIEW_ID)
-                if job["status"] == "running":
-                    job["cancel_flag"]["cancel"] = True
-                del self._jobs[idx]
-                removed = True
+                if job["status"] in ("queued", "running"):
+                    self._cancel_job_locked(job)
+                    changed = True
+                else:
+                    del self._jobs[idx]
+                    changed = True
                 break
-            if removed:
+            if changed:
                 if view_id == MAIN_VIEW_ID:
                     self._refresh_main_view_status_locked()
                 else:
                     self._refresh_batch_view_status_locked(batch_id)
-        if removed:
+        if changed:
             self._emit_queue()
-        return removed
+        return changed
+
+    def cancel_view(self, view_id: str | None = None) -> int:
+        view_id = view_id or self._active_view
+        cancelled = 0
+        with self._lock:
+            view = self._views.get(view_id)
+            if view:
+                view.setdefault("cancel_flag", {"cancel": False})["cancel"] = True
+            batch = self._batches.get(view_id)
+            if batch:
+                batch["cancel_flag"]["cancel"] = True
+                batch["pending"] = deque()
+            for job in self._jobs:
+                if job.get("view_id", MAIN_VIEW_ID) != view_id:
+                    continue
+                if job["status"] in ("queued", "running"):
+                    self._cancel_job_locked(job)
+                    cancelled += 1
+            if view_id == MAIN_VIEW_ID:
+                self._refresh_main_view_status_locked()
+            elif view_id in self._views:
+                self._views[view_id]["status"] = "cancelled"
+        if cancelled or (view and view.get("cancel_flag", {}).get("cancel")):
+            self._emit_queue()
+        return cancelled
 
     def clear_view(self, view_id: str | None = None) -> int:
         view_id = view_id or self._active_view
         removed = 0
         with self._lock:
             batch = self._batches.get(view_id)
-            view = self._views.get(view_id)
-            if view and view_id != MAIN_VIEW_ID:
-                view.setdefault("cancel_flag", {"cancel": False})["cancel"] = True
             if batch:
-                batch["cancel_flag"]["cancel"] = True
                 batch["pending"] = deque()
-
             keep: list[dict[str, Any]] = []
             for job in self._jobs:
                 if job.get("view_id", MAIN_VIEW_ID) != view_id:
                     keep.append(job)
                     continue
                 if job["status"] == "running":
-                    job["cancel_flag"]["cancel"] = True
+                    self._cancel_job_locked(job)
                 removed += 1
             self._jobs = keep
-
             if view_id == MAIN_VIEW_ID:
                 self._refresh_main_view_status_locked()
             elif view_id in self._views:
-                self._views[view_id]["status"] = "cancelled"
-        if removed or (view_id != MAIN_VIEW_ID and view_id in self._views):
+                self._refresh_batch_view_status_locked(view_id)
+        if removed:
             self._emit_queue()
+        return removed
+
+    def remove_view(self, view_id: str) -> bool:
+        if view_id == MAIN_VIEW_ID:
+            return False
+        removed = False
+        active_view: str | None = None
+        with self._lock:
+            if view_id not in self._views:
+                return False
+            view = self._views[view_id]
+            view.setdefault("cancel_flag", {"cancel": False})["cancel"] = True
+            batch = self._batches.get(view_id)
+            if batch:
+                batch["pending"] = deque()
+                batch.setdefault("cancel_flag", {"cancel": False})["cancel"] = True
+            keep: list[dict[str, Any]] = []
+            for job in self._jobs:
+                if job.get("view_id", MAIN_VIEW_ID) != view_id:
+                    keep.append(job)
+                    continue
+                if job["status"] in ("queued", "running"):
+                    self._cancel_job_locked(job)
+            self._jobs = keep
+            self._views.pop(view_id, None)
+            if view_id in self._view_order:
+                self._view_order.remove(view_id)
+            self._batches.pop(view_id, None)
+            if self._active_view == view_id:
+                self._active_view = MAIN_VIEW_ID
+                active_view = MAIN_VIEW_ID
+            self._refresh_main_view_status_locked()
+            removed = True
+        if removed:
+            self._emit_queue(active_view=active_view)
         return removed
 
     def clear(self) -> int:
@@ -372,6 +437,8 @@ class DownloadQueue:
             self._views[MAIN_VIEW_ID]["status"] = "idle"
         elif any(j["status"] in ("queued", "running") for j in jobs):
             self._views[MAIN_VIEW_ID]["status"] = "running"
+        elif any(j["status"] == "cancelled" for j in jobs):
+            self._views[MAIN_VIEW_ID]["status"] = "cancelled"
         else:
             self._views[MAIN_VIEW_ID]["status"] = "done"
 
@@ -420,6 +487,8 @@ class DownloadQueue:
                             continue
                         if job["status"] != "queued":
                             continue
+                        if job.get("cancel_flag", {}).get("cancel"):
+                            continue
                         to_start.append(job)
                         job["status"] = "running"
                         slots -= 1
@@ -460,7 +529,7 @@ class DownloadQueue:
             engine = self._engine_for(job_id)
             result = engine.download_single(job)
             if job.get("cancel_flag", {}).get("cancel"):
-                job["status"] = "error"
+                job["status"] = "cancelled"
                 job["result"] = {"ok": False, "error": "Cancelled"}
             else:
                 job["result"] = result

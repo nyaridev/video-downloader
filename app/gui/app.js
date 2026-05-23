@@ -147,6 +147,7 @@ function statusClass(status) {
   if (status === "running") return "queue-item--running";
   if (status === "done") return "queue-item--done";
   if (status === "error") return "queue-item--error";
+  if (status === "cancelled") return "queue-item--cancelled";
   return "queue-item--queued";
 }
 
@@ -156,8 +157,35 @@ function statusLabel(status) {
     running: "Downloading",
     done: "Complete",
     error: "Error",
+    cancelled: "Cancelled",
   };
   return labels[status] || status;
+}
+
+function isActiveJob(job) {
+  return job.status === "running" || job.status === "queued";
+}
+
+function viewHasActiveWork(jobs, view) {
+  if (view.status === "preparing") return true;
+  if (jobs.some(isActiveJob)) return true;
+  if (view.kind !== "main" && view.status === "running" && (view.pending || 0) > 0) {
+    return true;
+  }
+  return false;
+}
+
+function updateCancelClearButton(jobs, view) {
+  const btn = $("cancelViewBtn");
+  if (!btn) return;
+  const active = viewHasActiveWork(jobs, view);
+  if (active) {
+    btn.textContent = "Cancel all";
+    btn.title = "Cancel all active downloads in this queue view";
+  } else {
+    btn.textContent = "Clear all";
+    btn.title = "Remove all items from this queue view";
+  }
 }
 
 const ITEM_LABELS = {
@@ -300,32 +328,118 @@ function jobsForActiveView() {
   return state.allJobs.filter((j) => (j.view_id || MAIN_VIEW_ID) === viewId);
 }
 
-function updateQueueViewSelect() {
-  const select = $("queueViewSelect");
-  if (!select) return;
+function queueViewLabel(view) {
+  return view?.name || view?.id || "Main";
+}
+
+function closeQueueViewMenu() {
+  const picker = $("queueViewPicker");
+  const menu = $("queueViewMenu");
+  const trigger = $("queueViewTrigger");
+  if (!picker || !menu || !trigger) return;
+  picker.classList.remove("open");
+  menu.hidden = true;
+  trigger.setAttribute("aria-expanded", "false");
+}
+
+function openQueueViewMenu() {
+  const picker = $("queueViewPicker");
+  const menu = $("queueViewMenu");
+  const trigger = $("queueViewTrigger");
+  if (!picker || !menu || !trigger || picker.hidden) return;
+  picker.classList.add("open");
+  menu.hidden = false;
+  trigger.setAttribute("aria-expanded", "true");
+}
+
+function toggleQueueViewMenu() {
+  const picker = $("queueViewPicker");
+  if (!picker || picker.hidden) return;
+  if (picker.classList.contains("open")) {
+    closeQueueViewMenu();
+  } else {
+    openQueueViewMenu();
+  }
+}
+
+function syncQueueViewTriggerLabel() {
+  const label = $("queueViewLabel");
+  if (!label) return;
+  const view = activeViewMeta();
+  label.textContent = queueViewLabel(view);
+}
+
+function updateQueueViewPicker() {
+  const picker = $("queueViewPicker");
+  const menu = $("queueViewMenu");
+  if (!picker || !menu) return;
 
   const hasBatchViews = state.views.some((v) => v.kind !== "main");
-  select.hidden = !hasBatchViews;
-  if (!hasBatchViews) return;
+  picker.hidden = !hasBatchViews;
+  if (!hasBatchViews) {
+    closeQueueViewMenu();
+    return;
+  }
 
-  const prev = select.value;
-  select.innerHTML = "";
+  const activeId = state.activeViewId || MAIN_VIEW_ID;
+  menu.innerHTML = "";
   state.views.forEach((view) => {
-    const opt = document.createElement("option");
-    opt.value = view.id;
-    opt.textContent = view.name || view.id;
-    select.appendChild(opt);
+    const li = document.createElement("li");
+    li.className = "queue-view-option";
+    li.dataset.viewId = view.id;
+    li.setAttribute("role", "option");
+    if (view.id === activeId) {
+      li.classList.add("active");
+      li.setAttribute("aria-selected", "true");
+    }
+
+    const selectBtn = document.createElement("button");
+    selectBtn.type = "button";
+    selectBtn.className = "queue-view-option-btn";
+    selectBtn.textContent = queueViewLabel(view);
+    li.appendChild(selectBtn);
+
+    if (view.kind !== "main") {
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "queue-view-option-remove";
+      removeBtn.setAttribute("aria-label", `Remove ${queueViewLabel(view)}`);
+      removeBtn.title = "Remove this queue view";
+      removeBtn.textContent = "×";
+      li.appendChild(removeBtn);
+    }
+
+    menu.appendChild(li);
   });
-  select.value = state.activeViewId || prev || MAIN_VIEW_ID;
+
+  syncQueueViewTriggerLabel();
 }
 
 function setActiveView(viewId) {
-  state.activeViewId = viewId || MAIN_VIEW_ID;
-  const select = $("queueViewSelect");
-  if (select && !select.hidden) {
-    select.value = state.activeViewId;
-  }
+  const nextId = viewId || MAIN_VIEW_ID;
+  const exists = state.views.some((v) => v.id === nextId);
+  state.activeViewId = exists ? nextId : MAIN_VIEW_ID;
+  closeQueueViewMenu();
+  updateQueueViewPicker();
   renderQueueList();
+}
+
+async function removeQueueView(viewId) {
+  if (!viewId || viewId === MAIN_VIEW_ID) return;
+  try {
+    const res = await apiCall("remove_queue_view", viewId);
+    applyQueueState(res);
+    if (res.active_view) {
+      state.activeViewId = res.active_view;
+    } else if (!state.views.some((v) => v.id === state.activeViewId)) {
+      state.activeViewId = MAIN_VIEW_ID;
+    }
+    updateQueueViewPicker();
+    renderQueueList();
+    log("info", "Queue view removed.");
+  } catch (err) {
+    log("error", err.message);
+  }
 }
 
 function aggregateQueueStats(jobs) {
@@ -333,6 +447,7 @@ function aggregateQueueStats(jobs) {
   const doneJobs = jobs.filter((j) => j.status === "done").length;
   const runningJobs = jobs.filter((j) => j.status === "running").length;
   const errorJobs = jobs.filter((j) => j.status === "error").length;
+  const cancelledJobs = jobs.filter((j) => j.status === "cancelled").length;
 
   let downloaded = 0;
   let total = 0;
@@ -347,13 +462,14 @@ function aggregateQueueStats(jobs) {
   });
 
   const pct = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0;
-  const finishedCount = doneJobs + errorJobs;
+  const finishedCount = doneJobs + errorJobs + cancelledJobs;
 
   return {
     totalJobs,
     doneJobs,
     runningJobs,
     errorJobs,
+    cancelledJobs,
     finishedCount,
     downloaded,
     total,
@@ -497,15 +613,41 @@ async function removeQueueJob(jobId) {
   }
 }
 
+async function handleQueueItemAction(job) {
+  await removeQueueJob(job.id);
+}
+
 async function cancelActiveView() {
+  try {
+    const res = await apiCall("cancel_queue_view", state.activeViewId);
+    applyQueueState(res);
+    if (res.cancelled > 0) {
+      log("info", `Cancelled ${res.cancelled} active item(s) in this queue view.`);
+    }
+  } catch (err) {
+    log("error", err.message);
+  }
+}
+
+async function clearActiveView() {
   try {
     const res = await apiCall("clear_queue", state.activeViewId);
     applyQueueState(res);
     if (res.removed > 0) {
-      log("info", `Cancelled ${res.removed} item(s) in this queue view.`);
+      log("info", `Cleared ${res.removed} item(s) from this queue view.`);
     }
   } catch (err) {
     log("error", err.message);
+  }
+}
+
+async function handleCancelClearView() {
+  const jobs = jobsForActiveView();
+  const view = activeViewMeta();
+  if (viewHasActiveWork(jobs, view)) {
+    await cancelActiveView();
+  } else {
+    await clearActiveView();
   }
 }
 
@@ -521,7 +663,14 @@ function applyQueueState(data, revision) {
   state.allJobs = data?.jobs || [];
   state.views = data?.views || [{ id: MAIN_VIEW_ID, name: "Main", kind: "main" }];
 
-  updateQueueViewSelect();
+  if (data?.active_view) {
+    state.activeViewId = data.active_view;
+  }
+  if (!state.views.some((v) => v.id === state.activeViewId)) {
+    state.activeViewId = MAIN_VIEW_ID;
+  }
+
+  updateQueueViewPicker();
   renderQueueList();
 }
 
@@ -530,6 +679,8 @@ function renderQueueList() {
   const view = activeViewMeta();
   const list = $("queueList");
   list.innerHTML = "";
+
+  updateCancelClearButton(jobs, view);
 
   if (view.status === "preparing") {
     const li = document.createElement("li");
@@ -571,11 +722,14 @@ function renderQueueList() {
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";
     closeBtn.className = "queue-item-close";
-    closeBtn.setAttribute("aria-label", "Cancel download");
+    closeBtn.setAttribute(
+      "aria-label",
+      isActiveJob(job) ? "Cancel download" : "Remove from queue"
+    );
     closeBtn.textContent = "×";
     closeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      removeQueueJob(job.id);
+      handleQueueItemAction(job);
     });
 
     head.append(headLeft, closeBtn);
@@ -900,11 +1054,36 @@ async function init() {
   });
 
   $("cancelViewBtn").addEventListener("click", () => {
-    cancelActiveView();
+    handleCancelClearView();
   });
 
-  $("queueViewSelect")?.addEventListener("change", (e) => {
-    setActiveView(e.target.value);
+  $("queueViewTrigger")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleQueueViewMenu();
+  });
+
+  $("queueViewMenu")?.addEventListener("click", (e) => {
+    const removeBtn = e.target.closest(".queue-view-option-remove");
+    if (removeBtn) {
+      e.stopPropagation();
+      const option = removeBtn.closest(".queue-view-option");
+      const viewId = option?.dataset.viewId;
+      if (viewId) removeQueueView(viewId);
+      return;
+    }
+    const selectBtn = e.target.closest(".queue-view-option-btn");
+    if (!selectBtn) return;
+    const option = selectBtn.closest(".queue-view-option");
+    const viewId = option?.dataset.viewId;
+    if (viewId) setActiveView(viewId);
+  });
+
+  document.addEventListener("click", (e) => {
+    const picker = $("queueViewPicker");
+    if (!picker || picker.hidden || !picker.classList.contains("open")) return;
+    if (!picker.contains(e.target)) {
+      closeQueueViewMenu();
+    }
   });
 
   $("downloadBtn").addEventListener("click", async () => {

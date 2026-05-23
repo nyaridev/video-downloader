@@ -158,9 +158,17 @@ class Api:
         removed = self._queue.remove(job_id)
         return {"ok": removed, **self._queue.queue_state()}
 
+    def cancel_queue_view(self, view_id: str | None = None) -> dict[str, Any]:
+        count = self._queue.cancel_view(view_id)
+        return {"ok": True, "cancelled": count, **self._queue.queue_state()}
+
     def clear_queue(self, view_id: str | None = None) -> dict[str, Any]:
         count = self._queue.clear_view(view_id)
         return {"ok": True, "removed": count, **self._queue.queue_state()}
+
+    def remove_queue_view(self, view_id: str) -> dict[str, Any]:
+        removed = self._queue.remove_view(view_id)
+        return {"ok": removed, **self._queue.queue_state()}
 
     def _pick_file(self, filetypes: list[tuple[str, str]], initial: str) -> str | None:
         result: list[str | None] = [None]

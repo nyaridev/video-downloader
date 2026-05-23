@@ -171,7 +171,7 @@
           <span class="label-inline">Queue</span>
           <div class="status-head-actions">
             <span id="queueSummary" class="queue-summary">0 / 0 files</span>
-            <button type="button" id="cancelViewBtn" class="btn-sm" title="Cancel all downloads in this queue view">Cancel all</button>
+            <button type="button" id="cancelViewBtn" class="btn-sm" title="Cancel all active downloads in this queue view">Cancel all</button>
           </div>
         </div>
         <ul id="queueList" class="queue-list"></ul>
@@ -180,7 +180,20 @@
           <div id="overallProgressBar" class="progress-bar"></div>
         </div>
         <p id="overallProgressText" class="progress-text">Idle</p>
-        <select id="queueViewSelect" class="queue-view-select" hidden aria-label="Queue view"></select>
+        <div id="queueViewPicker" class="queue-view-picker" hidden>
+          <button
+            type="button"
+            id="queueViewTrigger"
+            class="queue-view-trigger"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="queueViewMenu"
+          >
+            <span id="queueViewLabel" class="queue-view-trigger-label">Main</span>
+            <span class="queue-view-trigger-chevron" aria-hidden="true"></span>
+          </button>
+          <ul id="queueViewMenu" class="queue-view-menu" role="listbox" hidden></ul>
+        </div>
         <button type="button" id="downloadBtn" class="download-btn">Download</button>
       </aside>
     </div>
