@@ -295,7 +295,7 @@ body.frameless .app-body {
   border: 1px solid var(--border);
 }
 
-.settings-section .btn-sm:hover {
+.settings-section .btn-sm:hover:not(:disabled) {
   background: var(--mode-idle);
   border-color: var(--border-hover);
 }

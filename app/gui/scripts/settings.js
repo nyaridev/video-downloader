@@ -23,11 +23,20 @@ function bindEditablePathField(input, { onNormalized } = {}) {
   });
 }
 
+export function syncBrowserCookiesControls() {
+  const enabled = $("chkBrowserCookies")?.checked ?? false;
+  const browserSelect = $("cookieBrowser");
+  const signInBtn = $("signInBtn");
+  if (browserSelect) browserSelect.disabled = !enabled;
+  if (signInBtn) signInBtn.disabled = !enabled;
+  syncCustomSelect(browserSelect);
+}
+
 export function syncCookiesFileMode(pathValue) {
   const hasPath = Boolean(normalizeOutputPath(pathValue));
   if (!hasPath) return;
   $("chkBrowserCookies").checked = false;
-  $("cookieBrowser").disabled = true;
+  syncBrowserCookiesControls();
 }
 
 function readSaveLayout() {

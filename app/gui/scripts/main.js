@@ -1,6 +1,7 @@
 import { apiCall } from "./api.js";
 import { $, fillSelect } from "./dom.js";
 import { refreshExtrasStatus, saveExtrasSettings } from "./extras.js";
+import { bindConcurrencySliderVisual } from "./concurrency-slider.js?v=1";
 import { getConcurrency, setConcurrency } from "./format.js";
 import { copyConsoleToClipboard, log } from "./logger.js";
 import {
@@ -23,6 +24,7 @@ import {
   saveAppSettings,
   scheduleSaveSettings,
   syncCookiesFileMode,
+  syncBrowserCookiesControls,
 } from "./settings.js";
 import { MAIN_VIEW_ID, state } from "./state.js";
 import { applyTheme } from "./theme.js";
@@ -67,8 +69,8 @@ function init() {
       fillSelect($("cookieBrowser"), defaults.browser_options);
       $("cookieBrowser").value = defaults.cookies_browser || "firefox";
       $("chkBrowserCookies").checked = defaults.use_browser_cookies !== false;
-      $("cookieBrowser").disabled = !$("chkBrowserCookies").checked;
       $("cookiesFile").value = defaults.cookies_file || "";
+      syncBrowserCookiesControls();
       syncCustomSelect($("cookieBrowser"));
       applySettingsDefaults(defaults);
       applyFramelessUi(defaults.frameless !== false);
@@ -155,6 +157,7 @@ function init() {
   });
 
   $("signInBtn").addEventListener("click", async () => {
+    if (!$("chkBrowserCookies").checked || $("signInBtn").disabled) return;
     try {
       const result = await apiCall("open_youtube_signin");
       log(result.ok ? "info" : "error", result.message);
@@ -175,8 +178,8 @@ function init() {
   });
 
   $("chkBrowserCookies").addEventListener("change", () => {
-    $("cookieBrowser").disabled = !$("chkBrowserCookies").checked;
     if ($("chkBrowserCookies").checked) $("cookiesFile").value = "";
+    syncBrowserCookiesControls();
     scheduleSaveSettings();
   });
 
@@ -209,8 +212,11 @@ function init() {
     }
   });
 
-  $("concurrencySlider").addEventListener("input", () => {
-    setConcurrency($("concurrencySlider").value);
+  bindConcurrencySliderVisual();
+  syncBrowserCookiesControls();
+
+  $("concurrencySlider").addEventListener("input", (e) => {
+    setConcurrency(e.target.value);
   });
 
   $("concurrencyInput").addEventListener("input", () => {

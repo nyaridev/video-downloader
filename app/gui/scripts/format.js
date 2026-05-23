@@ -1,5 +1,6 @@
 import { $ } from "./dom.js";
 import { refreshNumberInputFor } from "./number-input.js";
+import { paintConcurrencySlider } from "./concurrency-slider.js?v=1";
 
 export function sanitizeLogText(text) {
   if (!text) return "";
@@ -36,9 +37,15 @@ export function clampConcurrency(value) {
   return Math.max(1, Math.min(100, n));
 }
 
+function updateConcurrencySliderFill(slider, value) {
+  paintConcurrencySlider(slider, value);
+}
+
 export function setConcurrency(value) {
   const v = clampConcurrency(value);
-  $("concurrencySlider").value = v;
+  const slider = $("concurrencySlider");
+  slider.value = v;
+  updateConcurrencySliderFill(slider, v);
   const input = $("concurrencyInput");
   input.value = v;
   refreshNumberInputFor(input);

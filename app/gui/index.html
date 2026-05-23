@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nari's Video Downloader</title>
-  <link rel="stylesheet" href="styles/main.css?v=5" />
+  <link rel="stylesheet" href="styles/main.css?v=8" />
   <link id="themeStylesheet" rel="stylesheet" href="themes/Default/theme.css?v=1" />
   <style>
     .format-field-row {
@@ -157,16 +157,19 @@
                 </div>
               </div>
             </div>
-            <input
-              type="range"
-              id="concurrencySlider"
-              class="concurrency-slider"
-              min="1"
-              max="100"
-              step="1"
-              value="8"
-              data-tip="How many queue items download at once. Applies when you click Download, not while a batch is running."
-            />
+            <div class="concurrency-slider-wrap">
+              <div class="concurrency-slider-rail" aria-hidden="true"></div>
+              <input
+                type="range"
+                id="concurrencySlider"
+                class="concurrency-slider"
+                min="1"
+                max="100"
+                step="1"
+                value="8"
+                data-tip="How many queue items download at once. Applies when you click Download, not while a batch is running."
+              />
+            </div>
             <p class="hint">1 = one at a time, 100 = maximum parallel. Takes effect on the next Download click.</p>
           </section>
           </div>
@@ -383,6 +386,6 @@
     </div>
   </div>
 
-  <script type="module" src="scripts/main.js"></script>
+  <script type="module" src="scripts/main.js?v=4"></script>
 </body>
 </html>
