@@ -9,8 +9,10 @@ import {
   handleCancelClearView,
   handleRetryAllFailed,
   removeQueueView,
+  renderQueueList,
   setActiveView,
   setProgress,
+  syncQueueLocalization,
   toggleQueueViewMenu,
 } from "./queue.js";
 import {
@@ -24,6 +26,7 @@ import {
 } from "./settings.js";
 import { MAIN_VIEW_ID, state } from "./state.js";
 import { applyTheme } from "./theme.js";
+import { qualityLabel, setLanguage, t } from "./i18n.js";
 import { initCustomSelects, syncCustomSelect } from "./custom-select.js";
 import { initNumberInputs } from "./number-input.js";
 import { applyFramelessUi, bindHoverTips, setMode, setPage } from "./ui.js";
@@ -33,7 +36,7 @@ window.dispatchBackend = function (payload) {
   if (event === "log") log(data.level, data.message);
   if (event === "progress") setProgress(data);
   if (event === "queue") applyQueueState(data);
-  if (event === "job_status") log("info", `Job ${data.id}: ${data.status}`);
+  if (event === "job_status") log("info", t("log.jobStatus", { id: data.id, status: data.status }));
 };
 
 function init() {
@@ -59,8 +62,8 @@ function init() {
       const defaults = await apiCall("get_defaults");
       state.outputDir = defaults.output_dir;
       $("outputDir").value = defaults.output_dir;
-      fillSelect($("videoQuality"), defaults.video_qualities);
-      fillSelect($("audioQuality"), defaults.audio_qualities);
+      fillSelect($("videoQuality"), defaults.video_qualities, { labelFn: qualityLabel });
+      fillSelect($("audioQuality"), defaults.audio_qualities, { labelFn: qualityLabel });
       fillSelect($("cookieBrowser"), defaults.browser_options);
       $("cookieBrowser").value = defaults.cookies_browser || "firefox";
       $("chkBrowserCookies").checked = defaults.use_browser_cookies !== false;
@@ -72,10 +75,10 @@ function init() {
       applyDownloadDefaults(defaults);
       await refreshExtrasStatus().catch(() => {});
       state.queueRevision = 0;
-      state.views = [{ id: MAIN_VIEW_ID, name: "Main", kind: "main" }];
+      state.views = [{ id: MAIN_VIEW_ID, name: t("queue.main"), kind: "main" }];
       state.activeViewId = MAIN_VIEW_ID;
       applyQueueState({ jobs: [], views: state.views, active_view: MAIN_VIEW_ID, revision: 0 });
-      log("info", `Ready. Output: ${defaults.output_dir}`);
+      log("info", t("log.readyOutput", { path: defaults.output_dir }));
     } catch (err) {
       log("error", err.message);
     }
@@ -92,7 +95,7 @@ function init() {
   $("restartBtn").addEventListener("click", async () => {
     try {
       await saveAppSettings({ silent: true });
-      log("info", "Restarting program...");
+      log("info", t("log.restarting"));
       await apiCall("restart_program");
     } catch (err) {
       log("error", err.message);
@@ -104,10 +107,10 @@ function init() {
     if (!btn || btn.disabled || !$("denoSourceLocal").checked) return;
     try {
       btn.disabled = true;
-      btn.textContent = "Installing...";
-      log("info", "Downloading Deno...");
+      btn.textContent = t("extras.installing");
+      log("info", t("log.installingDeno"));
       const result = await apiCall("install_deno");
-      log(result.ok ? "info" : "error", result.message || "Deno install finished.");
+      log(result.ok ? "info" : "error", result.message || t("log.denoFinished"));
       if (!result.ok) {
         await refreshExtrasStatus();
       }
@@ -122,10 +125,10 @@ function init() {
     if (!btn || btn.disabled || !$("ffmpegSourceLocal").checked) return;
     try {
       btn.disabled = true;
-      btn.textContent = "Installing...";
-      log("info", "Downloading ffmpeg...");
+      btn.textContent = t("extras.installing");
+      log("info", t("log.installingFfmpeg"));
       const result = await apiCall("install_ffmpeg");
-      log(result.ok ? "info" : "error", result.message || "ffmpeg install finished.");
+      log(result.ok ? "info" : "error", result.message || t("log.ffmpegFinished"));
       if (!result.ok) {
         await refreshExtrasStatus();
       }
@@ -180,6 +183,10 @@ function init() {
   $("cookieBrowser").addEventListener("change", scheduleSaveSettings);
   $("themeSelect").addEventListener("change", () => {
     applyTheme($("themeSelect").value);
+    scheduleSaveSettings();
+  });
+  $("languageSelect")?.addEventListener("change", () => {
+    setLanguage($("languageSelect").value);
     scheduleSaveSettings();
   });
   $("chkFrameless").addEventListener("change", scheduleSaveSettings);
@@ -246,7 +253,7 @@ function init() {
   $("downloadBtn").addEventListener("click", async () => {
     try {
       const config = readConfig();
-      if (!config.url) throw new Error("Enter a YouTube URL.");
+      if (!config.url) throw new Error(t("log.enterUrl"));
       config.concurrency = getConcurrency();
       await saveAppSettings({ silent: true });
       const res = await apiCall("enqueue_download", config);
@@ -257,7 +264,7 @@ function init() {
       } else {
         setActiveView(MAIN_VIEW_ID);
       }
-      log("info", `Download queued (${res.job_id})`);
+      log("info", t("log.downloadQueued", { id: res.job_id }));
       $("url").value = "";
       setPage("download");
     } catch (err) {
@@ -271,6 +278,12 @@ function init() {
 
   $("copyLogBtn").addEventListener("click", () => {
     copyConsoleToClipboard();
+  });
+
+  window.addEventListener("languagechange", () => {
+    syncQueueLocalization();
+    renderQueueList();
+    refreshExtrasStatus().catch(() => {});
   });
 }
 

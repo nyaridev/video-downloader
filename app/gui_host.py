@@ -25,7 +25,7 @@ def run_app() -> None:
     WEBVIEW_DIR.mkdir(parents=True, exist_ok=True)
 
     window = webview.create_window(
-        "Video Downloader",
+        "Nari's Video Downloader",
         url=str(index_html),
         js_api=api,
         width=1180,

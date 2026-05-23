@@ -10,13 +10,6 @@ export const state = {
   queueRevision: 0,
 };
 
-export const ITEM_LABELS = {
-  video: "Video",
-  audio: "Audio",
-  metadata: "Metadata",
-  thumbnail: "Thumbnail",
-};
-
 export const ITEM_ORDER = ["metadata", "thumbnail", "audio", "video"];
 
 export const DOWNLOAD_SETTING_IDS = [

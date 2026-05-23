@@ -165,6 +165,125 @@ body.frameless .app-body {
   padding: 10px;
 }
 
+.placeholder-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.placeholder-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.placeholder-group-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.placeholder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.placeholder-chip {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: calc(var(--radius) - 1px);
+  background: var(--placeholder-chip-bg);
+  border: 1px solid var(--placeholder-chip-border);
+}
+
+.placeholder-group--file {
+  --placeholder-chip-bg: rgba(74, 143, 212, 0.08);
+  --placeholder-chip-border: rgba(74, 143, 212, 0.18);
+  --placeholder-code-bg: rgba(74, 143, 212, 0.14);
+  --placeholder-code-color: var(--accent);
+}
+
+.placeholder-group--playlist {
+  --placeholder-chip-bg: rgba(95, 168, 112, 0.08);
+  --placeholder-chip-border: rgba(95, 168, 112, 0.18);
+  --placeholder-code-bg: rgba(95, 168, 112, 0.14);
+  --placeholder-code-color: var(--success);
+}
+
+.placeholder-group--channel {
+  --placeholder-chip-bg: rgba(212, 168, 74, 0.08);
+  --placeholder-chip-border: rgba(212, 168, 74, 0.2);
+  --placeholder-code-bg: rgba(212, 168, 74, 0.14);
+  --placeholder-code-color: var(--warn);
+}
+
+.placeholder-chip code {
+  justify-self: start;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--placeholder-code-color);
+  background: var(--placeholder-code-bg);
+  white-space: nowrap;
+}
+
+.placeholder-chip span {
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.placeholder-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  border: 1px dashed var(--border);
+}
+
+.placeholder-notes-list {
+  margin: 0;
+  padding-left: 1.15em;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.placeholder-notes-list code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  color: var(--text);
+  background: var(--card);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.placeholder-legend.settings-disclosure-body {
+  padding: 12px;
+}
+
 .settings-section .path-input,
 .settings-section .format-input,
 .settings-section .custom-select-trigger {

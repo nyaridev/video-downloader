@@ -10,7 +10,8 @@ import {
   truncateUrl,
 } from "./format.js";
 import { log } from "./logger.js";
-import { ITEM_LABELS, ITEM_ORDER, MAIN_VIEW_ID, state } from "./state.js";
+import { itemLabel, t } from "./i18n.js";
+import { ITEM_ORDER, MAIN_VIEW_ID, state } from "./state.js";
 
 function displayActiveItem(job) {
   const p = job.progress || {};
@@ -26,7 +27,7 @@ function displayActiveItem(job) {
 export function queueItemDisplayTitle(job) {
   if (job.title) return truncateTitle(job.title, 20);
   if (job.url) return truncateUrl(job.url, 20);
-  return "Download";
+  return t("queue.download");
 }
 
 function statusClass(status) {
@@ -39,11 +40,11 @@ function statusClass(status) {
 
 function statusLabel(status) {
   const labels = {
-    queued: "Queued",
-    running: "Downloading",
-    done: "Complete",
-    error: "Error",
-    cancelled: "Cancelled",
+    queued: t("status.queued"),
+    running: t("status.running"),
+    done: t("status.done"),
+    error: t("status.error"),
+    cancelled: t("status.cancelled"),
   };
   return labels[status] || status;
 }
@@ -61,12 +62,71 @@ function viewHasActiveWork(jobs, view) {
   return false;
 }
 
+const PREPARE_MESSAGE_KEYS = {
+  Cancelled: "status.cancelled",
+  "Starting fetch...": "status.startingFetch",
+  "Fetching entries...": "status.fetching",
+  "Connecting to source...": "status.connecting",
+  "Loading page...": "status.loadingPage",
+  "fetching entries": "status.fetchingShort",
+};
+
+function prepareDisplayMessage(prepare) {
+  if (!prepare) return t("status.fetching");
+
+  const { found = 0, total, page, phase, message } = prepare;
+
+  if (message === "Cancelled") return t("status.cancelled");
+  if (phase === "connect") return t("status.connecting");
+  if (phase === "webpage") return t("status.loadingPage");
+  if (phase === "start") return t("status.startingFetch");
+  if (phase === "finalizing") return t("status.finalizing");
+
+  const parts = [];
+  if (found > 0) {
+    if (total != null && total > 0) {
+      parts.push(t("queue.videosCount", { found, total }));
+    } else {
+      parts.push(t("queue.videosFound", { count: found }));
+    }
+  } else if (page != null) {
+    parts.push(t("queue.fetchingPage", { page }));
+  } else if (phase === "page" || phase === "items" || phase === "playlist") {
+    parts.push(t("status.fetchingShort"));
+  }
+
+  if (parts.length) return parts.join(" · ");
+
+  if (message && PREPARE_MESSAGE_KEYS[message]) {
+    return t(PREPARE_MESSAGE_KEYS[message]);
+  }
+
+  const foundMatch = typeof message === "string" && message.match(/^Found (\d+) videos$/);
+  if (foundMatch) {
+    return t("queue.videosFoundComplete", { count: foundMatch[1] });
+  }
+
+  return message || t("status.fetching");
+}
+
+function normalizeView(view) {
+  if (view?.kind === "main" || view?.id === MAIN_VIEW_ID) {
+    return { ...view, id: MAIN_VIEW_ID, kind: "main", name: t("queue.main") };
+  }
+  return view;
+}
+
+export function syncQueueLocalization() {
+  state.views = state.views.map(normalizeView);
+  syncQueueViewTriggerLabel();
+}
+
 function prepareProgressMeta(view) {
   const prepare = view?.prepare || {};
   const found = prepare.found || 0;
   const total = prepare.total || 0;
   const elapsed = formatElapsed(prepare.elapsed || 0);
-  const message = prepare.message || "Fetching entries...";
+  const message = prepareDisplayMessage(prepare);
   let pct = null;
   if (total > 0) {
     pct = Math.min(100, (found / total) * 100);
@@ -79,9 +139,9 @@ function prepareSummaryText(view) {
   const parts = [message];
   if (found > 0 && !message.includes(String(found))) {
     if (total > 0) {
-      parts.push(`${found} / ${total} videos`);
+      parts.push(t("queue.videosCount", { found, total }));
     } else {
-      parts.push(`${found} videos found`);
+      parts.push(t("queue.videosFound", { count: found }));
     }
   }
   parts.push(elapsed);
@@ -93,11 +153,11 @@ function prepareHeaderSummaryText(view) {
   const page = prepare.page;
   const parts = [];
   if (found > 0) {
-    parts.push(total > 0 ? `${found}/${total} videos` : `${found} videos`);
+    parts.push(total > 0 ? t("queue.videosCount", { found, total }) : t("queue.videosFound", { count: found }));
   } else {
-    parts.push("Fetching...");
+    parts.push(t("status.fetchingShort"));
   }
-  if (page) parts.push(`page ${page}`);
+  if (page) parts.push(t("queue.page", { page }));
   parts.push(elapsed);
   return parts.join(" · ");
 }
@@ -125,27 +185,27 @@ function buildPreparingQueueItem(view) {
     : "queue-item queue-item--preparing";
   const { message, found, total, elapsed } = prepareProgressMeta(view);
   const detail = cancelled
-    ? "Fetch cancelled before downloads started"
+    ? t("queue.fetchCancelled")
     : found > 0
       ? total > 0
-        ? `${found} / ${total} videos discovered`
-        : `${found} videos discovered so far`
-      : "This can take several minutes for large channels.";
+        ? t("queue.videosHeaderUi", { found, total })
+        : t("queue.videosFoundSoFar", { found })
+      : t("queue.largeChannelHint");
 
   const head = document.createElement("div");
   head.className = "queue-item-head";
   const headLeft = document.createElement("div");
   headLeft.className = "queue-item-head-left";
   headLeft.innerHTML = cancelled
-    ? '<strong>Preparing batch</strong><span class="queue-status-badge">Cancelled</span>'
-    : '<strong>Preparing batch</strong><span class="queue-status-badge">Fetching</span>';
+    ? `<strong>${t("queue.preparingBatch")}</strong><span class="queue-status-badge">${t("status.cancelled")}</span>`
+    : `<strong>${t("queue.preparingBatch")}</strong><span class="queue-status-badge">${t("queue.fetching")}</span>`;
   head.appendChild(headLeft);
 
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
   closeBtn.className = "queue-item-close";
-  closeBtn.setAttribute("aria-label", cancelled ? "Remove from queue" : "Cancel fetch");
-  closeBtn.title = cancelled ? "Remove from queue" : "Cancel fetch";
+  closeBtn.setAttribute("aria-label", cancelled ? t("queue.removeFromQueue") : t("queue.cancelFetch"));
+  closeBtn.title = cancelled ? t("queue.removeFromQueue") : t("queue.cancelFetch");
   closeBtn.textContent = "×";
   closeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -155,7 +215,7 @@ function buildPreparingQueueItem(view) {
 
   const statusLine = document.createElement("div");
   statusLine.className = "queue-item-url";
-  statusLine.textContent = cancelled ? message || "Cancelled" : message;
+  statusLine.textContent = cancelled ? message || t("status.cancelled") : message;
 
   const meta = document.createElement("div");
   meta.className = "queue-item-meta";
@@ -181,11 +241,11 @@ function updateCancelClearButton(jobs, view) {
   if (!btn) return;
   const active = viewHasActiveWork(jobs, view);
   if (active) {
-    btn.textContent = "Cancel all";
-    btn.title = "Cancel all active downloads in this queue view";
+    btn.textContent = t("queue.cancelAll");
+    btn.title = t("queue.cancelAllTitle");
   } else {
-    btn.textContent = "Clear all";
-    btn.title = "Remove all items from this queue view";
+    btn.textContent = t("queue.clearAll");
+    btn.title = t("queue.clearAllTitle");
   }
 }
 
@@ -199,8 +259,8 @@ function updateRetryAllButton(jobs, view) {
   const errorJobs = jobs.filter((j) => j.status === "error").length;
   if (errorJobs > 0) {
     btn.hidden = false;
-    btn.textContent = errorJobs === 1 ? "Retry failed download" : `Retry all failed downloads (${errorJobs})`;
-    btn.title = `Retry ${errorJobs} failed download(s) in this view`;
+    btn.textContent = errorJobs === 1 ? t("queue.retryFailedOne") : t("queue.retryFailedAll", { count: errorJobs });
+    btn.title = t("queue.retryFailedTitle", { count: errorJobs });
   } else {
     btn.hidden = true;
   }
@@ -231,7 +291,7 @@ function buildItemTags(job, activeItem) {
     span.className = "item-tag";
     if (tagState === "active") span.classList.add("item-tag--active");
     if (tagState === "done") span.classList.add("item-tag--done");
-    span.textContent = ITEM_LABELS[key] || key;
+    span.textContent = itemLabel(key);
     tags.appendChild(span);
   });
   return tags;
@@ -247,7 +307,8 @@ export function jobsForActiveView() {
 }
 
 function queueViewLabel(view) {
-  return view?.name || view?.id || "Main";
+  if (view?.kind === "main") return t("queue.main");
+  return view?.name || view?.id || t("queue.main");
 }
 
 export function closeQueueViewMenu() {
@@ -277,6 +338,7 @@ function updateQueueViewPicker() {
   picker.hidden = !hasBatchViews;
   if (!hasBatchViews) {
     closeQueueViewMenu();
+    syncQueueViewTriggerLabel();
     return;
   }
 
@@ -302,8 +364,8 @@ function updateQueueViewPicker() {
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "custom-select-option-remove";
-      removeBtn.setAttribute("aria-label", `Remove ${queueViewLabel(view)}`);
-      removeBtn.title = "Remove this queue view";
+      removeBtn.setAttribute("aria-label", t("queue.removeViewAria", { name: queueViewLabel(view) }));
+      removeBtn.title = t("queue.removeView");
       removeBtn.textContent = "×";
       li.appendChild(removeBtn);
     }
@@ -335,7 +397,7 @@ export async function removeQueueView(viewId) {
     }
     updateQueueViewPicker();
     renderQueueList();
-    log("info", "Queue view removed.");
+    log("info", t("log.queueViewRemoved"));
   } catch (err) {
     log("error", err.message);
   }
@@ -396,29 +458,29 @@ function updateQueueSummary(jobs) {
     if (view.status === "preparing") {
       summary.textContent = prepareHeaderSummaryText(view);
       summary.title = prepareSummaryText(view);
-      bytes.textContent = view.kind === "channel" ? "Scanning channel videos" : "Scanning playlist videos";
+      bytes.textContent = view.kind === "channel" ? t("queue.scanningChannel") : t("queue.scanningPlaylist");
       return;
     }
 
     if (view.status === "cancelled" && view.prepare) {
-      summary.textContent = `Cancelled · ${formatElapsed(view.prepare.elapsed || 0)}`;
+      summary.textContent = t("queue.cancelledElapsed", { elapsed: formatElapsed(view.prepare.elapsed || 0) });
       summary.title = prepareSummaryText(view);
-      bytes.textContent = "Fetch cancelled";
+      bytes.textContent = t("queue.fetchCancelledShort");
       return;
     }
 
-    summary.textContent = `${finished} / ${total} videos`;
+    summary.textContent = t("queue.videosProgress", { finished, total });
     if (running > 0) {
-      summary.textContent += ` · ${running} downloading`;
+      summary.textContent += ` · ${t("queue.downloadingCount", { count: running })}`;
     } else if (pending > 0) {
-      summary.textContent += ` · ${pending} waiting`;
+      summary.textContent += ` · ${t("queue.waitingCount", { count: pending })}`;
     }
 
     const byteParts = [];
     if (stats.total > 0) {
       byteParts.push(`${formatBytes(stats.downloaded)} / ${formatBytes(stats.total)}`);
     } else if (stats.runningJobs > 0) {
-      byteParts.push(`${formatBytes(stats.downloaded)} downloaded`);
+      byteParts.push(t("queue.downloadedBytes", { bytes: formatBytes(stats.downloaded) }));
     }
     if (stats.speed > 0) {
       byteParts.push(formatSpeed(stats.speed));
@@ -428,14 +490,14 @@ function updateQueueSummary(jobs) {
   }
 
   if (!jobs.length) {
-    summary.textContent = "0 / 0 files";
+    summary.textContent = t("queue.summaryFiles", { finished: 0, total: 0 });
     bytes.textContent = "—";
     return;
   }
 
-  summary.textContent = `${stats.finishedCount} / ${stats.totalJobs} files`;
+  summary.textContent = t("queue.summaryFiles", { finished: stats.finishedCount, total: stats.totalJobs });
   if (stats.runningJobs > 0) {
-    summary.textContent += ` · ${stats.runningJobs} downloading`;
+    summary.textContent += ` · ${t("queue.downloadingCount", { count: stats.runningJobs })}`;
   }
 
   const byteParts = [];
@@ -450,7 +512,7 @@ function updateQueueSummary(jobs) {
   if (byteParts.length) {
     bytes.textContent = byteParts.join(" · ");
   } else {
-    bytes.textContent = stats.doneJobs ? "All transfers finished" : "Waiting to start";
+    bytes.textContent = stats.doneJobs ? t("queue.allTransfersComplete") : t("queue.waitingToStart");
   }
 }
 
@@ -477,12 +539,12 @@ function setOverallProgress(jobs, currentProgress) {
   if (!jobs.length && !isPrepareView(view)) {
     if (view.kind !== "main" && view.total > 0 && (view.finished || 0) >= view.total) {
       bar.style.width = "100%";
-      text.textContent = view.status === "cancelled" ? "Batch cancelled" : "All downloads complete";
+      text.textContent = view.status === "cancelled" ? t("queue.batchCancelled") : t("queue.allComplete");
       return;
     }
     bar.style.width = "0%";
     bar.classList.remove("progress-bar--indeterminate");
-    text.textContent = "Idle";
+    text.textContent = t("queue.idle");
     return;
   }
 
@@ -491,7 +553,7 @@ function setOverallProgress(jobs, currentProgress) {
     if (view.status === "cancelled") {
       bar.classList.remove("progress-bar--indeterminate");
       bar.style.width = "0%";
-      text.textContent = `Cancelled · ${elapsed}`;
+      text.textContent = t("queue.cancelledElapsed", { elapsed });
       return;
     }
     setPrepareProgressBar(bar, view);
@@ -504,8 +566,8 @@ function setOverallProgress(jobs, currentProgress) {
   if (stats.finishedCount === stats.totalJobs && stats.totalJobs > 0) {
     bar.style.width = "100%";
     text.textContent = stats.errorJobs
-      ? `Finished with ${stats.errorJobs} error(s)`
-      : "All downloads complete";
+      ? t("queue.finishedWithErrors", { count: stats.errorJobs })
+      : t("queue.allComplete");
     return;
   }
 
@@ -517,12 +579,12 @@ function setOverallProgress(jobs, currentProgress) {
     ? sanitizeLogText(currentProgress._percent_str || "")
     : "";
   const parts = [
-    pct > 0 ? `${pct.toFixed(1)}% overall` : null,
+    pct > 0 ? t("queue.overallPercent", { pct: pct.toFixed(1) }) : null,
     pctLabel,
     stats.speed > 0 ? formatSpeed(stats.speed) : null,
     eta,
   ].filter(Boolean);
-  text.textContent = parts.join(" · ") || "Downloading...";
+  text.textContent = parts.join(" · ") || t("queue.downloadingEllipsis");
 }
 
 async function removeQueueJob(jobId) {
@@ -543,7 +605,7 @@ async function retryQueueJob(jobId) {
     const res = await apiCall("retry_queue_job", jobId);
     applyQueueState(res);
     if (res.ok) {
-      log("info", "Download queued for retry.");
+      log("info", t("log.retryQueued"));
     }
   } catch (err) {
     log("error", err.message);
@@ -557,7 +619,7 @@ export async function handleRetryAllFailed() {
     if (res.retried > 0) {
       const list = $("queueList");
       if (list) list.scrollTop = 0;
-      log("info", `Retrying ${res.retried} failed download(s).`);
+      log("info", t("log.retryingFailed", { count: res.retried }));
     }
   } catch (err) {
     log("error", err.message);
@@ -569,7 +631,7 @@ async function cancelActiveView() {
     const res = await apiCall("cancel_queue_view", state.activeViewId);
     applyQueueState(res);
     if (res.cancelled > 0) {
-      log("info", `Cancelled ${res.cancelled} active item(s) in this queue view.`);
+      log("info", t("log.cancelledItems", { count: res.cancelled }));
     }
   } catch (err) {
     log("error", err.message);
@@ -581,7 +643,7 @@ async function clearActiveView() {
     const res = await apiCall("clear_queue", state.activeViewId);
     applyQueueState(res);
     if (res.removed > 0) {
-      log("info", `Cleared ${res.removed} item(s) from this queue view.`);
+      log("info", t("log.clearedItems", { count: res.removed }));
     }
   } catch (err) {
     log("error", err.message);
@@ -608,7 +670,7 @@ export function applyQueueState(data, revision) {
   }
 
   state.allJobs = data?.jobs || [];
-  state.views = data?.views || [{ id: MAIN_VIEW_ID, name: "Main", kind: "main" }];
+  state.views = (data?.views || [{ id: MAIN_VIEW_ID, kind: "main" }]).map(normalizeView);
 
   if (data?.active_view) {
     state.activeViewId = data.active_view;
@@ -640,7 +702,7 @@ export function renderQueueList() {
   if (!jobs.length) {
     const li = document.createElement("li");
     li.className = "queue-item queue-item--empty";
-    li.textContent = view.kind === "main" ? "Queue is empty" : "No active downloads in this view";
+    li.textContent = view.kind === "main" ? t("queue.empty") : t("queue.noActiveInView");
     list.appendChild(li);
     updateQueueSummary(jobs);
     setOverallProgress(jobs);
@@ -671,8 +733,8 @@ export function renderQueueList() {
       const retryBtn = document.createElement("button");
       retryBtn.type = "button";
       retryBtn.className = "queue-item-retry";
-      retryBtn.setAttribute("aria-label", "Retry download");
-      retryBtn.title = "Retry download";
+      retryBtn.setAttribute("aria-label", t("queue.retryDownload"));
+      retryBtn.title = t("queue.retryDownload");
       retryBtn.textContent = "↻";
       retryBtn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -686,7 +748,7 @@ export function renderQueueList() {
     closeBtn.className = "queue-item-close";
     closeBtn.setAttribute(
       "aria-label",
-      isActiveJob(job) ? "Cancel download" : "Remove from queue"
+      isActiveJob(job) ? t("queue.cancelDownload") : t("queue.removeFromQueue")
     );
     closeBtn.textContent = "×";
     closeBtn.addEventListener("click", (e) => {
@@ -711,7 +773,7 @@ export function renderQueueList() {
     const fileLine = document.createElement("div");
     fileLine.className = "queue-item-file";
     if (job.status === "running" && activeItem) {
-      fileLine.innerHTML = `<strong>File</strong> ${ITEM_LABELS[activeItem] || activeItem}`;
+      fileLine.innerHTML = `<strong>${t("queue.file")}</strong> ${itemLabel(activeItem)}`;
     }
 
     const progressWrap = document.createElement("div");

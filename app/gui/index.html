@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video Downloader</title>
+  <title>Nari's Video Downloader</title>
   <link rel="stylesheet" href="styles/main.css?v=3" />
   <link id="themeStylesheet" rel="stylesheet" href="themes/Default/theme.css?v=1" />
   <style>
@@ -21,7 +21,7 @@
 <body>
   <div class="app">
     <header id="winTitlebar" class="win-titlebar pywebview-drag-region">
-      <span class="win-title-text">Video Downloader</span>
+      <span class="win-title-text">Nari's Video Downloader</span>
       <div class="window-controls">
         <button type="button" id="winMin" class="win-btn" title="Minimize" aria-label="Minimize">
           <svg width="10" height="10" viewBox="0 0 10 10"><path fill="currentColor" d="M0 4.5h10v1H0z"/></svg>
@@ -176,13 +176,21 @@
             <section class="settings-section">
               <h2 class="settings-section-title">Appearance</h2>
               <div class="row theme-row">
-                <span class="label-inline">Theme</span>
-                <select id="themeSelect" class="select-compact theme-select" aria-label="Theme">
+                <span class="label-inline" data-i18n="settings.language">Language</span>
+                <select id="languageSelect" class="select-compact theme-select" data-i18n-aria="settings.language" aria-label="Language">
+                  <option value="en">English</option>
+                  <option value="pl">Polski</option>
+                  <option value="zh">中文 (简体)</option>
+                </select>
+              </div>
+              <div class="row theme-row">
+                <span class="label-inline" data-i18n="settings.theme">Theme</span>
+                <select id="themeSelect" class="select-compact theme-select" data-i18n-aria="settings.theme" aria-label="Theme">
                   <option value="default">Default</option>
                   <option value="meta">Meta</option>
                 </select>
               </div>
-              <p class="hint">Applies immediately. Saved with your other settings.</p>
+              <p class="hint" data-i18n="settings.appearanceHint">Applies immediately. Saved with your other settings.</p>
             </section>
             <section class="settings-section">
               <h2 class="settings-section-title">Window</h2>
@@ -231,26 +239,50 @@
                 </div>
               </div>
               <details class="settings-disclosure">
-                <summary class="settings-disclosure-trigger">Name placeholders</summary>
-                <p class="hint format-legend settings-disclosure-body">
-                  File name placeholders: <code>{title}</code> video title,
-                  <code>{id}</code> video ID,
-                  <code>{channel}</code> channel name,
-                  <code>{upload_date}</code> upload date (YYYYMMDD),
-                  <code>{playlist}</code> playlist title.
-                  Playlist name placeholders: <code>{playlist}</code>, <code>{playlist_id}</code>, <code>{id}</code> (playlist ID).
-                  Channel name placeholders: <code>{channel}</code>, <code>{channel_id}</code>, <code>{id}</code> (channel ID).
-                  Channel and playlist folder names set the Organized layout category folders.
-                  Channel and playlist name templates always apply under those folders in Organized layout.
-                  With Flat layout, name templates apply when Group playlist/channel is enabled.
-                  Metadata is saved as the file name plus <code>.meta.json</code>.
-                </p>
+                <summary class="settings-disclosure-trigger" data-i18n="settings.namePlaceholders">Name placeholders</summary>
+                <div class="placeholder-legend settings-disclosure-body">
+                  <div class="placeholder-group placeholder-group--file">
+                    <h3 class="placeholder-group-title" data-i18n="settings.placeholderGroup.fileName">File name</h3>
+                    <ul class="placeholder-list">
+                      <li class="placeholder-chip"><code>{title}</code><span data-i18n="settings.placeholder.title">Video title</span></li>
+                      <li class="placeholder-chip"><code>{id}</code><span data-i18n="settings.placeholder.idVideo">Video ID</span></li>
+                      <li class="placeholder-chip"><code>{channel}</code><span data-i18n="settings.placeholder.channel">Channel name</span></li>
+                      <li class="placeholder-chip"><code>{upload_date}</code><span data-i18n="settings.placeholder.uploadDate">Upload date (YYYYMMDD)</span></li>
+                      <li class="placeholder-chip"><code>{playlist}</code><span data-i18n="settings.placeholder.playlist">Playlist title</span></li>
+                    </ul>
+                  </div>
+                  <div class="placeholder-group placeholder-group--playlist">
+                    <h3 class="placeholder-group-title" data-i18n="settings.placeholderGroup.playlistName">Playlist name</h3>
+                    <ul class="placeholder-list">
+                      <li class="placeholder-chip"><code>{playlist}</code><span data-i18n="settings.placeholder.playlist">Playlist title</span></li>
+                      <li class="placeholder-chip"><code>{playlist_id}</code><span data-i18n="settings.placeholder.playlistId">Playlist ID</span></li>
+                      <li class="placeholder-chip"><code>{id}</code><span data-i18n="settings.placeholder.idPlaylist">Playlist ID</span></li>
+                    </ul>
+                  </div>
+                  <div class="placeholder-group placeholder-group--channel">
+                    <h3 class="placeholder-group-title" data-i18n="settings.placeholderGroup.channelName">Channel name</h3>
+                    <ul class="placeholder-list">
+                      <li class="placeholder-chip"><code>{channel}</code><span data-i18n="settings.placeholder.channel">Channel name</span></li>
+                      <li class="placeholder-chip"><code>{channel_id}</code><span data-i18n="settings.placeholder.channelId">Channel ID</span></li>
+                      <li class="placeholder-chip"><code>{id}</code><span data-i18n="settings.placeholder.idChannel">Channel ID</span></li>
+                    </ul>
+                  </div>
+                  <div class="placeholder-notes">
+                    <h3 class="placeholder-group-title" data-i18n="settings.placeholderGroup.notes">Notes</h3>
+                    <ul class="placeholder-notes-list">
+                      <li data-i18n="settings.placeholderNote.organizedFolders">Channel and playlist folder names set the Organized layout category folders.</li>
+                      <li data-i18n="settings.placeholderNote.organizedTemplates">Channel and playlist name templates always apply under those folders in Organized layout.</li>
+                      <li data-i18n="settings.placeholderNote.flatLayout">With Flat layout, name templates apply when Group playlist/channel is enabled.</li>
+                      <li data-i18n-html="settings.placeholderNote.metadata">Metadata is saved as the file name plus <code>.meta.json</code>.</li>
+                    </ul>
+                  </div>
+                </div>
               </details>
             </section>
             <section class="settings-section">
               <h2 class="settings-section-title">YouTube</h2>
-              <p class="hint">Sign in if downloads fail with a bot check.
-                <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>
+              <p class="hint"><span id="youtubeHintText">Sign in if downloads fail with a bot check.</span>
+                <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank" id="youtubeHelpLink">Help</a>
               </p>
               <div class="row wrap">
                 <label class="toggle-card toggle-card--grow" data-tip="Read YouTube login cookies from your browser to reduce bot-check failures. Use Sign in if downloads still fail.">

@@ -6,6 +6,7 @@ import { getConcurrency, setConcurrency } from "./format.js";
 import { log } from "./logger.js";
 import { DOWNLOAD_SETTING_IDS, state } from "./state.js";
 import { applyTheme, readThemeFromForm, setThemeSelectValue } from "./theme.js";
+import { initLanguage, readLanguageFromForm, t } from "./i18n.js";
 
 let saveTimer = null;
 
@@ -35,6 +36,7 @@ function readSaveLayout() {
 }
 
 export function applySettingsDefaults(defaults) {
+  initLanguage(defaults.language || "en");
   setThemeSelectValue(defaults.theme);
   applyTheme(defaults.theme);
   $("chkFrameless").checked = defaults.frameless !== false;
@@ -71,6 +73,7 @@ export function readSettingsFromForm() {
     cookies_browser: $("cookieBrowser").value,
     cookies_file: normalizeOutputPath($("cookiesFile").value),
     theme: readThemeFromForm(),
+    language: readLanguageFromForm(),
     frameless: $("chkFrameless").checked,
     remove_if_cancelled: $("chkRemoveIfCancelled").checked,
     bundle_folder_template: $("bundleFolderTemplate").value.trim(),
@@ -104,14 +107,14 @@ export function scheduleSaveSettings() {
 export async function saveAppSettings({ silent = false } = {}) {
   const s = readSettingsFromForm();
   await apiCall("save_app_settings", s);
-  if (!silent) log("info", "Settings saved.");
+  if (!silent) log("info", t("log.settingsSaved"));
 }
 
 export function readConfig() {
   const wantVideo = $("chkVideo").checked;
   const wantAudio = $("chkAudio").checked;
   if (!wantVideo && !wantAudio && !$("chkMeta").checked && !$("chkThumb").checked) {
-    throw new Error("Select at least one download item.");
+    throw new Error(t("log.selectOneItem"));
   }
   return {
     url: $("url").value.trim(),
