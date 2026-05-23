@@ -11,7 +11,7 @@ from typing import Any, Callable
 from yt_dlp.utils import DownloadError
 
 from app.config import load_settings, normalize_concurrency
-from app.downloader.batch_extract import extract_batch_entries
+from app.downloader.batch_extract import BatchPrepareCancelled, extract_batch_entries
 from app.downloader.engine import DownloadEngine
 from app.utils.text import normalize_log_message
 
@@ -144,6 +144,9 @@ class DownloadQueue:
 
     def _view_snapshot(self, view_id: str) -> dict[str, Any]:
         view = dict(self._views[view_id])
+        prepare = view.get("prepare")
+        if prepare:
+            view["prepare"] = dict(prepare)
         if view.get("kind") == "main":
             jobs = [j for j in self._jobs if j.get("view_id", MAIN_VIEW_ID) == MAIN_VIEW_ID]
             view["total"] = len(jobs)
@@ -212,6 +215,15 @@ class DownloadQueue:
                 "kind": mode,
                 "status": "preparing",
                 "cancel_flag": {"cancel": False},
+                "prepare": {
+                    "message": "Starting fetch...",
+                    "found": 0,
+                    "total": None,
+                    "page": None,
+                    "phase": "start",
+                    "started_at": time.time(),
+                    "elapsed": 0.0,
+                },
             }
             if batch_id not in self._view_order:
                 self._view_order.append(batch_id)
@@ -223,14 +235,74 @@ class DownloadQueue:
         ).start()
         return batch_id
 
+    def _is_batch_cancelled(self, batch_id: str) -> bool:
+        with self._lock:
+            view = self._views.get(batch_id)
+            return bool(view and view.get("cancel_flag", {}).get("cancel"))
+
+    def _mark_prepare_cancelled_locked(self, batch_id: str) -> None:
+        view = self._views.get(batch_id)
+        if not view:
+            return
+        view["status"] = "cancelled"
+        if view.get("name") == "Fetching...":
+            view["name"] = "Cancelled"
+        prepare = view.setdefault("prepare", {})
+        prepare["message"] = "Cancelled"
+
+    def _update_batch_prepare(self, batch_id: str, update: dict[str, Any]) -> None:
+        with self._lock:
+            view = self._views.get(batch_id)
+            if not view or view.get("status") != "preparing":
+                return
+            prepare = view.setdefault("prepare", {})
+            started_at = prepare.get("started_at") or time.time()
+            prepare["started_at"] = started_at
+            prepare.update(update)
+            prepare["elapsed"] = time.time() - started_at
+        self._emit_queue()
+
     def _prepare_batch(self, batch_id: str, job_config: dict[str, Any]) -> None:
         mode = job_config.get("mode", "playlist")
+        stop_heartbeat = threading.Event()
+        last_emit = 0.0
+
+        def on_progress(update: dict[str, Any]) -> None:
+            nonlocal last_emit
+            if self._is_batch_cancelled(batch_id):
+                raise BatchPrepareCancelled()
+            now = time.time()
+            if now - last_emit < 0.25 and update.get("phase") not in ("start", "done", "page"):
+                return
+            last_emit = now
+            self._update_batch_prepare(batch_id, update)
+
+        def should_cancel() -> bool:
+            return self._is_batch_cancelled(batch_id)
+
+        def heartbeat() -> None:
+            while not stop_heartbeat.wait(1.0):
+                with self._lock:
+                    view = self._views.get(batch_id)
+                    if not view or view.get("status") != "preparing":
+                        return
+                    if view.get("cancel_flag", {}).get("cancel"):
+                        return
+                    prepare = view.get("prepare") or {}
+                    started_at = prepare.get("started_at") or time.time()
+                    prepare["elapsed"] = time.time() - started_at
+                self._emit_queue()
+
+        heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
+        heartbeat_thread.start()
         try:
             self._log("info", f"Fetching {'playlist' if mode == 'playlist' else 'channel'} entries...")
-            view_name, entries, playlist_title, channel_handle = extract_batch_entries(
+            view_name, entries, playlist_title, playlist_id, channel_handle, channel_id = extract_batch_entries(
                 job_config["url"].strip(),
                 mode,
                 job_config,
+                on_progress=on_progress,
+                should_cancel=should_cancel,
             )
             with self._lock:
                 view = self._views.get(batch_id)
@@ -250,7 +322,9 @@ class DownloadQueue:
                 "total": len(entries),
                 "concurrency": concurrency,
                 "playlist_title": playlist_title,
+                "playlist_id": playlist_id,
                 "channel_handle": channel_handle,
+                "channel_id": channel_id,
                 "cancel_flag": {"cancel": False},
             }
             with self._lock:
@@ -258,25 +332,37 @@ class DownloadQueue:
                 self._views[batch_id]["name"] = view_name
                 self._views[batch_id]["status"] = "running"
                 self._views[batch_id]["total"] = len(entries)
+                self._views[batch_id].pop("prepare", None)
                 initial = min(concurrency, len(entries))
                 for _ in range(initial):
                     self._spawn_batch_entry_locked(batch_id)
             self._log("info", f"Queued {len(entries)} video(s) in \"{view_name}\".")
             self._emit_queue(active_view=batch_id)
             self._ensure_dispatcher()
+        except BatchPrepareCancelled:
+            with self._lock:
+                if batch_id in self._views:
+                    self._mark_prepare_cancelled_locked(batch_id)
+            self._log("info", "Batch fetch cancelled.")
+            self._emit_queue()
         except DownloadError as exc:
             self._log("error", str(exc))
             with self._lock:
                 if batch_id in self._views:
                     self._views[batch_id]["status"] = "error"
                     self._views[batch_id]["name"] = self._views[batch_id].get("name") or "Failed"
+                    self._views[batch_id].pop("prepare", None)
             self._emit_queue()
         except Exception as exc:  # noqa: BLE001
             self._log("error", normalize_log_message(str(exc)))
             with self._lock:
                 if batch_id in self._views:
                     self._views[batch_id]["status"] = "error"
+                    self._views[batch_id].pop("prepare", None)
             self._emit_queue()
+        finally:
+            stop_heartbeat.set()
+            heartbeat_thread.join(timeout=0.1)
 
     def _spawn_batch_entry_locked(self, batch_id: str) -> str | None:
         batch = self._batches.get(batch_id)
@@ -300,7 +386,9 @@ class DownloadQueue:
             "entry_index": entry.get("index"),
             "entry_total": batch["total"],
             "playlist_title": batch.get("playlist_title"),
+            "playlist_id": batch.get("playlist_id"),
             "channel_handle": batch.get("channel_handle"),
+            "channel_id": batch.get("channel_id"),
             "status": "queued",
             "cancel_flag": {"cancel": False},
             "progress": {},
@@ -351,6 +439,8 @@ class DownloadQueue:
             view = self._views.get(view_id)
             if view:
                 view.setdefault("cancel_flag", {"cancel": False})["cancel"] = True
+                if view.get("status") == "preparing":
+                    self._mark_prepare_cancelled_locked(view_id)
             batch = self._batches.get(view_id)
             if batch:
                 batch["cancel_flag"]["cancel"] = True
@@ -363,7 +453,7 @@ class DownloadQueue:
                     cancelled += 1
             if view_id == MAIN_VIEW_ID:
                 self._refresh_main_view_status_locked()
-            elif view_id in self._views:
+            elif view_id in self._views and view.get("status") not in ("cancelled",):
                 self._views[view_id]["status"] = "cancelled"
         if cancelled or (view and view.get("cancel_flag", {}).get("cancel")):
             self._emit_queue()
@@ -388,6 +478,9 @@ class DownloadQueue:
             if view_id == MAIN_VIEW_ID:
                 self._refresh_main_view_status_locked()
             elif view_id in self._views:
+                view = self._views[view_id]
+                if view.get("prepare"):
+                    view.pop("prepare", None)
                 self._refresh_batch_view_status_locked(view_id)
         if removed:
             self._emit_queue()

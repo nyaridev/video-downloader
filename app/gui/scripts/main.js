@@ -174,6 +174,10 @@ function init() {
   $("chkRemoveIfCancelled").addEventListener("change", scheduleSaveSettings);
   $("bundleFolderTemplate").addEventListener("input", scheduleSaveSettings);
   $("fileNameTemplate").addEventListener("input", scheduleSaveSettings);
+  $("playlistFolder").addEventListener("input", scheduleSaveSettings);
+  $("playlistNameTemplate").addEventListener("input", scheduleSaveSettings);
+  $("channelFolder").addEventListener("input", scheduleSaveSettings);
+  $("channelNameTemplate").addEventListener("input", scheduleSaveSettings);
 
   $("browseBtn").addEventListener("click", async () => {
     try {

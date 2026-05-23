@@ -4,6 +4,11 @@
   justify-content: space-between;
   gap: 8px;
   flex-shrink: 0;
+  min-width: 0;
+}
+
+.status-head > .label-inline {
+  flex-shrink: 0;
 }
 
 .status-head-actions {
@@ -11,12 +16,19 @@
   align-items: center;
   gap: 6px;
   margin-left: auto;
+  min-width: 0;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .queue-summary {
   font-size: 0.75rem;
   color: var(--muted);
   text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .queue-bytes {
@@ -247,6 +259,30 @@
   background: var(--accent);
   border-radius: 0;
   transition: width 0.15s linear;
+}
+
+.progress-bar--indeterminate {
+  width: 35% !important;
+  animation: progress-indeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.queue-item--preparing .progress-wrap {
+  position: relative;
+}
+
+.queue-item--preparing .progress-bar--indeterminate {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .progress-text {

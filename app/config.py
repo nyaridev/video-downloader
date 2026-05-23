@@ -8,10 +8,19 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.paths import ROOT, USER_DIR, ensure_user_layout
+from app.paths import (
+    DEFAULT_CHANNEL_FOLDER,
+    DEFAULT_PLAYLIST_FOLDER,
+    ROOT,
+    USER_DIR,
+    ensure_user_layout,
+    normalize_layout_folder_name,
+)
 from app.utils.naming import (
     DEFAULT_BUNDLE_FOLDER_TEMPLATE,
+    DEFAULT_CHANNEL_NAME_TEMPLATE,
     DEFAULT_FILE_NAME_TEMPLATE,
+    DEFAULT_PLAYLIST_NAME_TEMPLATE,
     normalize_name_template,
 )
 
@@ -37,11 +46,16 @@ DEFAULTS: dict[str, Any] = {
     "output_dir": "",
     "bundle": True,
     "combine_streams": True,
-    "organize": False,
+    "save_layout": "flat",
+    "group_playlist_channel": True,
     "concurrency": 8,
     "remove_if_cancelled": True,
     "bundle_folder_template": DEFAULT_BUNDLE_FOLDER_TEMPLATE,
     "file_name_template": DEFAULT_FILE_NAME_TEMPLATE,
+    "playlist_folder": DEFAULT_PLAYLIST_FOLDER,
+    "channel_folder": DEFAULT_CHANNEL_FOLDER,
+    "playlist_name_template": DEFAULT_PLAYLIST_NAME_TEMPLATE,
+    "channel_name_template": DEFAULT_CHANNEL_NAME_TEMPLATE,
     "deno_source": "path",
     "ffmpeg_source": "path",
 }
@@ -50,6 +64,18 @@ DEFAULTS: dict[str, Any] = {
 def normalize_tool_source(value: Any) -> str:
     source = str(value or "path").strip().lower()
     return source if source in ("path", "local") else "path"
+
+
+SAVE_LAYOUT_OPTIONS = ("flat", "organized", "intelligent")
+
+
+def normalize_save_layout(value: Any, *, organize: bool | None = None) -> str:
+    layout = str(value or "").strip().lower()
+    if layout in SAVE_LAYOUT_OPTIONS:
+        return layout
+    if organize is True:
+        return "organized"
+    return "flat"
 
 
 def normalize_concurrency(value: Any) -> int:
@@ -82,10 +108,12 @@ def load_settings() -> dict[str, Any]:
     ensure_user_layout()
     _migrate_legacy_settings()
     data = dict(DEFAULTS)
+    loaded: dict[str, Any] = {}
     if SETTINGS_FILE.is_file():
         try:
-            loaded = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
-            if isinstance(loaded, dict):
+            parsed = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
+            if isinstance(parsed, dict):
+                loaded = parsed
                 data.update(loaded)
         except (json.JSONDecodeError, OSError):
             pass
@@ -99,7 +127,9 @@ def load_settings() -> dict[str, Any]:
     data["want_thumbnail"] = bool(data.get("want_thumbnail", True))
     data["bundle"] = bool(data.get("bundle", True))
     data["combine_streams"] = bool(data.get("combine_streams", True))
-    data["organize"] = bool(data.get("organize", False))
+    organize_legacy = bool(data.get("organize", False)) if "save_layout" not in loaded else None
+    data["save_layout"] = normalize_save_layout(data.get("save_layout"), organize=organize_legacy)
+    data["group_playlist_channel"] = bool(data.get("group_playlist_channel", True))
     data["remove_if_cancelled"] = bool(data.get("remove_if_cancelled", True))
     data["bundle_folder_template"] = normalize_name_template(
         data.get("bundle_folder_template"),
@@ -108,6 +138,22 @@ def load_settings() -> dict[str, Any]:
     data["file_name_template"] = normalize_name_template(
         data.get("file_name_template"),
         DEFAULT_FILE_NAME_TEMPLATE,
+    )
+    data["playlist_folder"] = normalize_layout_folder_name(
+        data.get("playlist_folder"),
+        DEFAULT_PLAYLIST_FOLDER,
+    )
+    data["channel_folder"] = normalize_layout_folder_name(
+        data.get("channel_folder"),
+        DEFAULT_CHANNEL_FOLDER,
+    )
+    data["playlist_name_template"] = normalize_name_template(
+        data.get("playlist_name_template"),
+        DEFAULT_PLAYLIST_NAME_TEMPLATE,
+    )
+    data["channel_name_template"] = normalize_name_template(
+        data.get("channel_name_template"),
+        DEFAULT_CHANNEL_NAME_TEMPLATE,
     )
     legacy = _legacy_concurrency(data)
     data["concurrency"] = legacy if legacy is not None else normalize_concurrency(data.get("concurrency", 8))

@@ -19,8 +19,16 @@ def _bot_check_hint(msg: str) -> bool:
     )
 
 
-def extract_info(url: str, opts: dict[str, Any], *, cookie_browser: str | None = None) -> dict[str, Any]:
+def extract_info(
+    url: str,
+    opts: dict[str, Any],
+    *,
+    cookie_browser: str | None = None,
+    logger: Any | None = None,
+) -> dict[str, Any]:
     probe = base_ytdlp_opts(**opts, skip_download=True)
+    if logger is not None:
+        probe["logger"] = logger
     try:
         with yt_dlp.YoutubeDL(probe) as ydl:
             info = ydl.extract_info(url, download=False)

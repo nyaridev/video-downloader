@@ -65,6 +65,20 @@ def sanitize_name(name: str, max_len: int = 120) -> str:
     return cleaned[:max_len]
 
 
+DEFAULT_VIDEOS_FOLDER = "Videos"
+DEFAULT_PLAYLIST_FOLDER = "Playlists"
+DEFAULT_CHANNEL_FOLDER = "Channel"
+
+
+def normalize_layout_folder_name(value: str | None, default: str) -> str:
+    """Sanitize a user-configured layout folder name."""
+    text = str(value or "").strip()
+    if not text:
+        return default
+    cleaned = sanitize_name(text, max_len=60)
+    return cleaned or default
+
+
 def ensure_output_root(custom: str | None = None) -> Path:
     root = Path(custom) if custom else DEFAULT_OUTPUT
     root.mkdir(parents=True, exist_ok=True)
@@ -75,34 +89,62 @@ def resolve_download_dir(
     *,
     output_root: Path,
     mode: str,
-    organize: bool,
+    save_layout: str,
+    group_playlist_channel: bool,
     bundle: bool,
     bundle_folder_template: str,
     naming_context: dict[str, str],
     playlist_title: str | None,
+    playlist_id: str | None,
     channel_handle: str | None,
+    channel_id: str | None,
+    playlist_folder: str = DEFAULT_PLAYLIST_FOLDER,
+    channel_folder: str = DEFAULT_CHANNEL_FOLDER,
+    playlist_name_template: str = "{playlist}_{id}",
+    channel_name_template: str = "{channel}_{id}",
 ) -> Path:
     """Compute the directory where files for one video should land."""
-    from app.utils.naming import render_name_template
+    from app.utils.naming import build_channel_context, build_playlist_context, render_name_template
 
-    folder_name = render_name_template(bundle_folder_template, naming_context) if bundle else ""
+    layout = save_layout if save_layout in ("flat", "organized", "intelligent") else "flat"
 
-    if not organize:
-        base = output_root
-        if bundle:
-            base = base / folder_name
-        base.mkdir(parents=True, exist_ok=True)
-        return base
+    def playlist_subfolder() -> str:
+        return render_name_template(
+            playlist_name_template,
+            build_playlist_context(playlist_title, playlist_id),
+        )
 
-    if mode == "playlist" and playlist_title:
-        base = output_root / "playlists" / sanitize_name(playlist_title)
-    elif mode == "channel" and channel_handle:
-        handle = channel_handle if channel_handle.startswith("@") else f"@{channel_handle}"
-        base = output_root / "channels" / sanitize_name(handle)
+    def channel_subfolder() -> str:
+        return render_name_template(
+            channel_name_template,
+            build_channel_context(channel_handle, channel_id),
+        )
+
+    if layout == "intelligent":
+        base = output_root / (naming_context.get("channel") or "unknown")
+    elif layout == "organized":
+        if mode == "video":
+            base = output_root / DEFAULT_VIDEOS_FOLDER
+        elif mode == "playlist":
+            base = output_root / playlist_folder
+            if group_playlist_channel and (playlist_title or playlist_id):
+                base = base / playlist_subfolder()
+        elif mode == "channel":
+            base = output_root / channel_folder
+            if group_playlist_channel and (channel_handle or channel_id):
+                base = base / channel_subfolder()
+        else:
+            base = output_root / DEFAULT_VIDEOS_FOLDER
     else:
-        base = output_root / "videos"
+        base = output_root
+        if mode == "playlist" and group_playlist_channel and (playlist_title or playlist_id):
+            base = base / playlist_subfolder()
+        elif mode == "channel" and group_playlist_channel and (channel_handle or channel_id):
+            base = base / channel_subfolder()
 
     if bundle:
+        folder_name = render_name_template(bundle_folder_template, naming_context)
         base = base / folder_name
+
     base.mkdir(parents=True, exist_ok=True)
     return base

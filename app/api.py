@@ -7,10 +7,16 @@ import threading
 from typing import Any
 
 from app.auth.browser import launch_for_youtube_signin
-from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, save_settings
-from app.utils.naming import DEFAULT_BUNDLE_FOLDER_TEMPLATE, DEFAULT_FILE_NAME_TEMPLATE, normalize_name_template
+from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, normalize_save_layout, save_settings
+from app.utils.naming import (
+    DEFAULT_BUNDLE_FOLDER_TEMPLATE,
+    DEFAULT_CHANNEL_NAME_TEMPLATE,
+    DEFAULT_FILE_NAME_TEMPLATE,
+    DEFAULT_PLAYLIST_NAME_TEMPLATE,
+    normalize_name_template,
+)
 from app.gui.dialogs import pick_file, pick_folder
-from app.paths import DEFAULT_OUTPUT, ROOT, ensure_output_root
+from app.paths import DEFAULT_CHANNEL_FOLDER, DEFAULT_OUTPUT, DEFAULT_PLAYLIST_FOLDER, ROOT, ensure_output_root, normalize_layout_folder_name
 from app.queue import DownloadQueue
 from app.system.restart import restart_application
 from app.tools.deno import install_local_deno
@@ -66,11 +72,16 @@ class Api:
             "audio_quality": settings.get("audio_quality") or "Best",
             "bundle": settings["bundle"],
             "combine_streams": settings["combine_streams"],
-            "organize": settings["organize"],
+            "save_layout": settings["save_layout"],
+            "group_playlist_channel": settings["group_playlist_channel"],
             "concurrency": settings["concurrency"],
             "remove_if_cancelled": settings["remove_if_cancelled"],
             "bundle_folder_template": settings["bundle_folder_template"],
             "file_name_template": settings["file_name_template"],
+            "playlist_folder": settings["playlist_folder"],
+            "channel_folder": settings["channel_folder"],
+            "playlist_name_template": settings["playlist_name_template"],
+            "channel_name_template": settings["channel_name_template"],
         }
 
     def save_app_settings(self, settings: dict[str, Any]) -> dict[str, Any]:
@@ -100,7 +111,11 @@ class Api:
             "output_dir": self._output_dir,
             "bundle": bool(settings.get("bundle", True)),
             "combine_streams": bool(settings.get("combine_streams", True)),
-            "organize": bool(settings.get("organize", False)),
+            "save_layout": normalize_save_layout(
+                settings.get("save_layout"),
+                organize=bool(settings.get("organize")) if "save_layout" not in settings else None,
+            ),
+            "group_playlist_channel": bool(settings.get("group_playlist_channel", True)),
             "concurrency": concurrency,
             "remove_if_cancelled": bool(settings.get("remove_if_cancelled", True)),
             "bundle_folder_template": normalize_name_template(
@@ -110,6 +125,22 @@ class Api:
             "file_name_template": normalize_name_template(
                 settings.get("file_name_template"),
                 DEFAULT_FILE_NAME_TEMPLATE,
+            ),
+            "playlist_folder": normalize_layout_folder_name(
+                settings.get("playlist_folder"),
+                DEFAULT_PLAYLIST_FOLDER,
+            ),
+            "channel_folder": normalize_layout_folder_name(
+                settings.get("channel_folder"),
+                DEFAULT_CHANNEL_FOLDER,
+            ),
+            "playlist_name_template": normalize_name_template(
+                settings.get("playlist_name_template"),
+                DEFAULT_PLAYLIST_NAME_TEMPLATE,
+            ),
+            "channel_name_template": normalize_name_template(
+                settings.get("channel_name_template"),
+                DEFAULT_CHANNEL_NAME_TEMPLATE,
             ),
         }
         return save_settings(updates)

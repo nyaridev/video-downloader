@@ -54,3 +54,13 @@ export function truncateTitle(title, max = 20) {
   if (!title) return "";
   return title.length > max ? `${title.slice(0, max)}…` : title;
 }
+
+export function formatElapsed(seconds) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+  if (mins > 0) {
+    return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+  }
+  return `${secs}s`;
+}

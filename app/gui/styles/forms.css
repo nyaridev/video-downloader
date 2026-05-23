@@ -388,6 +388,17 @@
   color: var(--accent);
 }
 
+.format-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.format-field-row .format-field {
+  min-width: 0;
+}
+
 .format-field {
   display: flex;
   flex-direction: column;

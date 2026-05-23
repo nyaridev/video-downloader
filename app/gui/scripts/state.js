@@ -27,7 +27,9 @@ export const DOWNLOAD_SETTING_IDS = [
   "videoQuality",
   "audioQuality",
   "chkBundle",
+  "chkGroupPlaylistChannel",
   "chkCombine",
   "layoutRaw",
   "layoutOrg",
+  "layoutIntelligent",
 ];

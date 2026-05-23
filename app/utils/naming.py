@@ -8,7 +8,9 @@ from typing import Any
 from app.paths import sanitize_name
 
 DEFAULT_BUNDLE_FOLDER_TEMPLATE = "{title}_{id}"
-DEFAULT_FILE_NAME_TEMPLATE = "{id}"
+DEFAULT_FILE_NAME_TEMPLATE = "{title}"
+DEFAULT_PLAYLIST_NAME_TEMPLATE = "{playlist}_{id}"
+DEFAULT_CHANNEL_NAME_TEMPLATE = "{channel}_{id}"
 
 _PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
@@ -41,6 +43,35 @@ def build_naming_context(
         "channel": sanitize_name(channel) if channel else "unknown",
         "upload_date": upload_date or "unknown",
         "playlist": sanitize_name(playlist) if playlist else "",
+    }
+
+
+def build_playlist_context(
+    playlist_title: str | None,
+    playlist_id: str | None,
+) -> dict[str, str]:
+    playlist = sanitize_name(playlist_title) if playlist_title else ""
+    pid = str(playlist_id) if playlist_id else ""
+    return {
+        "playlist": playlist,
+        "playlist_id": pid,
+        "id": pid,
+    }
+
+
+def build_channel_context(
+    channel_handle: str | None,
+    channel_id: str | None,
+) -> dict[str, str]:
+    channel = ""
+    if channel_handle:
+        channel = channel_handle if channel_handle.startswith("@") else f"@{channel_handle}"
+    channel = sanitize_name(channel) if channel else ""
+    cid = str(channel_id) if channel_id else ""
+    return {
+        "channel": channel or "unknown",
+        "channel_id": cid,
+        "id": cid,
     }
 
 

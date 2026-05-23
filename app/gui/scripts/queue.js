@@ -2,6 +2,7 @@ import { apiCall } from "./api.js";
 import { $ } from "./dom.js";
 import {
   formatBytes,
+  formatElapsed,
   formatSpeed,
   sanitizeLogText,
   truncateTitle,
@@ -57,6 +58,121 @@ function viewHasActiveWork(jobs, view) {
     return true;
   }
   return false;
+}
+
+function prepareProgressMeta(view) {
+  const prepare = view?.prepare || {};
+  const found = prepare.found || 0;
+  const total = prepare.total || 0;
+  const elapsed = formatElapsed(prepare.elapsed || 0);
+  const message = prepare.message || "Fetching entries...";
+  let pct = null;
+  if (total > 0) {
+    pct = Math.min(100, (found / total) * 100);
+  }
+  return { prepare, found, total, elapsed, message, pct };
+}
+
+function prepareSummaryText(view) {
+  const { message, found, total, elapsed } = prepareProgressMeta(view);
+  const parts = [message];
+  if (found > 0 && !message.includes(String(found))) {
+    if (total > 0) {
+      parts.push(`${found} / ${total} videos`);
+    } else {
+      parts.push(`${found} videos found`);
+    }
+  }
+  parts.push(elapsed);
+  return parts.join(" · ");
+}
+
+function prepareHeaderSummaryText(view) {
+  const { found, total, elapsed, prepare } = prepareProgressMeta(view);
+  const page = prepare.page;
+  const parts = [];
+  if (found > 0) {
+    parts.push(total > 0 ? `${found}/${total} videos` : `${found} videos`);
+  } else {
+    parts.push("Fetching...");
+  }
+  if (page) parts.push(`page ${page}`);
+  parts.push(elapsed);
+  return parts.join(" · ");
+}
+
+function setPrepareProgressBar(bar, view) {
+  const { pct } = prepareProgressMeta(view);
+  bar.classList.remove("progress-bar--indeterminate");
+  if (pct != null && pct > 0) {
+    bar.style.width = `${pct}%`;
+  } else {
+    bar.classList.add("progress-bar--indeterminate");
+    bar.style.width = "";
+  }
+}
+
+function isPrepareView(view) {
+  return view.status === "preparing" || (view.status === "cancelled" && view.prepare);
+}
+
+function buildPreparingQueueItem(view) {
+  const cancelled = view.status === "cancelled";
+  const li = document.createElement("li");
+  li.className = cancelled
+    ? "queue-item queue-item--preparing queue-item--cancelled"
+    : "queue-item queue-item--preparing";
+  const { message, found, total, elapsed } = prepareProgressMeta(view);
+  const detail = cancelled
+    ? "Fetch cancelled before downloads started"
+    : found > 0
+      ? total > 0
+        ? `${found} / ${total} videos discovered`
+        : `${found} videos discovered so far`
+      : "This can take several minutes for large channels.";
+
+  const head = document.createElement("div");
+  head.className = "queue-item-head";
+  const headLeft = document.createElement("div");
+  headLeft.className = "queue-item-head-left";
+  headLeft.innerHTML = cancelled
+    ? '<strong>Preparing batch</strong><span class="queue-status-badge">Cancelled</span>'
+    : '<strong>Preparing batch</strong><span class="queue-status-badge">Fetching</span>';
+  head.appendChild(headLeft);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "queue-item-close";
+  closeBtn.setAttribute("aria-label", cancelled ? "Remove from queue" : "Cancel fetch");
+  closeBtn.title = cancelled ? "Remove from queue" : "Cancel fetch";
+  closeBtn.textContent = "×";
+  closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    handleCancelClearView();
+  });
+  head.appendChild(closeBtn);
+
+  const statusLine = document.createElement("div");
+  statusLine.className = "queue-item-url";
+  statusLine.textContent = cancelled ? message || "Cancelled" : message;
+
+  const meta = document.createElement("div");
+  meta.className = "queue-item-meta";
+  meta.textContent = `${detail} · ${elapsed}`;
+
+  const progressWrap = document.createElement("div");
+  progressWrap.className = "progress-wrap progress-wrap--item";
+  const progressBar = document.createElement("div");
+  progressBar.className = "progress-bar";
+  if (cancelled) {
+    progressBar.style.width = "0%";
+  } else {
+    setPrepareProgressBar(progressBar, view);
+  }
+  progressWrap.appendChild(progressBar);
+
+  li.append(head, statusLine, meta, progressWrap);
+  return li;
 }
 
 function updateCancelClearButton(jobs, view) {
@@ -268,6 +384,10 @@ function updateQueueSummary(jobs) {
   const summary = $("queueSummary");
   const bytes = $("queueBytes");
 
+  if (view.status !== "preparing" && !(view.status === "cancelled" && view.prepare)) {
+    summary.title = "";
+  }
+
   if (view.kind !== "main") {
     const finished = view.finished || 0;
     const total = view.total || 0;
@@ -275,8 +395,16 @@ function updateQueueSummary(jobs) {
     const running = view.running || 0;
 
     if (view.status === "preparing") {
-      summary.textContent = "Fetching entries...";
-      bytes.textContent = "—";
+      summary.textContent = prepareHeaderSummaryText(view);
+      summary.title = prepareSummaryText(view);
+      bytes.textContent = view.kind === "channel" ? "Scanning channel videos" : "Scanning playlist videos";
+      return;
+    }
+
+    if (view.status === "cancelled" && view.prepare) {
+      summary.textContent = `Cancelled · ${formatElapsed(view.prepare.elapsed || 0)}`;
+      summary.title = prepareSummaryText(view);
+      bytes.textContent = "Fetch cancelled";
       return;
     }
 
@@ -347,22 +475,32 @@ function setOverallProgress(jobs, currentProgress) {
     }
   }
 
-  if (!jobs.length && view.status !== "preparing") {
+  if (!jobs.length && !isPrepareView(view)) {
     if (view.kind !== "main" && view.total > 0 && (view.finished || 0) >= view.total) {
       bar.style.width = "100%";
       text.textContent = view.status === "cancelled" ? "Batch cancelled" : "All downloads complete";
       return;
     }
     bar.style.width = "0%";
+    bar.classList.remove("progress-bar--indeterminate");
     text.textContent = "Idle";
     return;
   }
 
-  if (view.status === "preparing") {
-    bar.style.width = "0%";
-    text.textContent = "Preparing batch...";
+  if (isPrepareView(view)) {
+    const { message, elapsed } = prepareProgressMeta(view);
+    if (view.status === "cancelled") {
+      bar.classList.remove("progress-bar--indeterminate");
+      bar.style.width = "0%";
+      text.textContent = `Cancelled · ${elapsed}`;
+      return;
+    }
+    setPrepareProgressBar(bar, view);
+    text.textContent = `${message} · ${elapsed}`;
     return;
   }
+
+  bar.classList.remove("progress-bar--indeterminate");
 
   if (stats.finishedCount === stats.totalJobs && stats.totalJobs > 0) {
     bar.style.width = "100%";
@@ -466,11 +604,8 @@ export function renderQueueList() {
 
   updateCancelClearButton(jobs, view);
 
-  if (view.status === "preparing") {
-    const li = document.createElement("li");
-    li.className = "queue-item queue-item--empty";
-    li.textContent = "Fetching playlist or channel entries...";
-    list.appendChild(li);
+  if (isPrepareView(view)) {
+    list.appendChild(buildPreparingQueueItem(view));
     updateQueueSummary(jobs);
     setOverallProgress(jobs);
     return;

@@ -4,7 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Video Downloader</title>
-  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="styles/main.css?v=2" />
+  <style>
+    .format-field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+    .format-field-row .format-field {
+      min-width: 0;
+    }
+  </style>
 </head>
 <body>
   <div class="app">
@@ -82,6 +93,10 @@
                   <span class="pill-switch"><input type="checkbox" id="chkBundle" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
                   <span class="toggle-label">Bundle</span>
                 </label>
+                <label class="toggle-card" data-tip="When downloading a playlist or channel, save files into a subfolder named after the playlist or channel.">
+                  <span class="pill-switch"><input type="checkbox" id="chkGroupPlaylistChannel" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Group playlist/channel</span>
+                </label>
                 <label class="toggle-card" data-tip="Merge separate video and audio streams into one MP4. Requires ffmpeg in your PATH.">
                   <span class="pill-switch"><input type="checkbox" id="chkCombine" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
                   <span class="toggle-label">Combine streams</span>
@@ -92,12 +107,16 @@
               <span class="option-group-label">Layout</span>
               <div class="toggle-grid">
                 <label class="toggle-card" data-tip="Save files directly in the output folder with no extra category folders.">
-                  <span class="pill-switch"><input type="radio" name="layout" id="layoutRaw" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="pill-switch"><input type="radio" name="layout" id="layoutRaw" value="flat" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
                   <span class="toggle-label">Flat</span>
                 </label>
-                <label class="toggle-card" data-tip="Sort downloads into videos, playlists, or channels subfolders based on the source.">
-                  <span class="pill-switch"><input type="radio" name="layout" id="layoutOrg" /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                <label class="toggle-card" data-tip="Sort downloads into Videos, Playlists, or Channel subfolders based on the source.">
+                  <span class="pill-switch"><input type="radio" name="layout" id="layoutOrg" value="organized" /><span class="pill-track"><span class="pill-knob"></span></span></span>
                   <span class="toggle-label">Organized</span>
+                </label>
+                <label class="toggle-card" data-tip="Save each video under a folder named after its uploader. Playlist downloads are split by channel.">
+                  <span class="pill-switch"><input type="radio" name="layout" id="layoutIntelligent" value="intelligent" /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                  <span class="toggle-label">Intelligent</span>
                 </label>
               </div>
             </div>
@@ -159,12 +178,36 @@
                 <label class="format-field-label" for="fileNameTemplate">File name</label>
                 <input id="fileNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
               </div>
+              <div class="format-field-row">
+                <div class="format-field">
+                  <label class="format-field-label" for="playlistFolder">Playlist folder</label>
+                  <input id="playlistFolder" type="text" class="path-input format-input" spellcheck="false" />
+                </div>
+                <div class="format-field">
+                  <label class="format-field-label" for="playlistNameTemplate">Playlist name</label>
+                  <input id="playlistNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
+                </div>
+              </div>
+              <div class="format-field-row">
+                <div class="format-field">
+                  <label class="format-field-label" for="channelFolder">Channel folder</label>
+                  <input id="channelFolder" type="text" class="path-input format-input" spellcheck="false" />
+                </div>
+                <div class="format-field">
+                  <label class="format-field-label" for="channelNameTemplate">Channel name</label>
+                  <input id="channelNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
+                </div>
+              </div>
               <p class="hint format-legend">
-                Placeholders: <code>{title}</code> video title,
+                File name placeholders: <code>{title}</code> video title,
                 <code>{id}</code> video ID,
                 <code>{channel}</code> channel name,
                 <code>{upload_date}</code> upload date (YYYYMMDD),
                 <code>{playlist}</code> playlist title.
+                Playlist name placeholders: <code>{playlist}</code>, <code>{playlist_id}</code>, <code>{id}</code> (playlist ID).
+                Channel name placeholders: <code>{channel}</code>, <code>{channel_id}</code>, <code>{id}</code> (channel ID).
+                Playlist and channel folder names apply to the Organized layout category folders.
+                Playlist and channel name templates apply when grouping is enabled (Flat or Organized).
                 Metadata is saved as the file name plus <code>.meta.json</code>.
               </p>
             </div>

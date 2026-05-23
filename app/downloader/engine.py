@@ -9,12 +9,18 @@ from typing import Any, Callable
 import yt_dlp
 from yt_dlp.utils import DownloadError, DownloadCancelled
 
-from app.config import load_settings, normalize_tool_source
+from app.config import load_settings, normalize_save_layout, normalize_tool_source
 from app.auth.cookies import CookieExportError, ytdlp_cookie_opts
 from app.utils.text import normalize_log_message, strip_ansi
 from app.utils.formats import build_format_string, pick_nearest_height
-from app.utils.naming import build_naming_context, render_name_template
-from app.paths import resolve_download_dir
+from app.utils.naming import (
+    DEFAULT_CHANNEL_NAME_TEMPLATE,
+    DEFAULT_FILE_NAME_TEMPLATE,
+    DEFAULT_PLAYLIST_NAME_TEMPLATE,
+    build_naming_context,
+    render_name_template,
+)
+from app.paths import DEFAULT_CHANNEL_FOLDER, DEFAULT_PLAYLIST_FOLDER, resolve_download_dir
 from app.downloader.extract import extract_info
 from app.downloader.ytdlp_opts import base_ytdlp_opts
 from app.downloader.metadata import write_metadata
@@ -169,27 +175,45 @@ class DownloadEngine:
         title = info.get("title") or video_id
         job["title"] = title
         settings = job.get("cookie_settings") or load_settings()
+        save_layout = normalize_save_layout(
+            job.get("save_layout", settings.get("save_layout", "flat")),
+            organize=bool(job.get("organize")) if "save_layout" not in job else None,
+        )
+        group_playlist_channel = bool(
+            job.get("group_playlist_channel", settings.get("group_playlist_channel", True))
+        )
+        channel_override = None if save_layout == "intelligent" else channel_handle
         naming_context = build_naming_context(
             info=info,
             playlist_title=playlist_title,
-            channel_handle=channel_handle,
+            channel_handle=channel_override,
         )
-        file_base_name = render_name_template(settings.get("file_name_template", "{id}"), naming_context)
+        file_base_name = render_name_template(
+            settings.get("file_name_template", DEFAULT_FILE_NAME_TEMPLATE),
+            naming_context,
+        )
         job["file_base_name"] = file_base_name
         output_root = Path(job["output_dir"])
-        organize = job.get("organize", False)
         bundle = job.get("bundle", False)
         mode = job.get("mode", "video")
+        playlist_id = job.get("playlist_id")
 
         target_dir = resolve_download_dir(
             output_root=output_root,
             mode=mode,
-            organize=organize,
+            save_layout=save_layout,
+            group_playlist_channel=group_playlist_channel,
             bundle=bundle,
             bundle_folder_template=settings.get("bundle_folder_template", "{title}_{id}"),
             naming_context=naming_context,
             playlist_title=playlist_title,
+            playlist_id=playlist_id,
             channel_handle=channel_handle,
+            channel_id=job.get("channel_id"),
+            playlist_folder=settings.get("playlist_folder", DEFAULT_PLAYLIST_FOLDER),
+            channel_folder=settings.get("channel_folder", DEFAULT_CHANNEL_FOLDER),
+            playlist_name_template=settings.get("playlist_name_template", DEFAULT_PLAYLIST_NAME_TEMPLATE),
+            channel_name_template=settings.get("channel_name_template", DEFAULT_CHANNEL_NAME_TEMPLATE),
         )
         job["download_dir"] = str(target_dir)
         job["video_id"] = video_id
