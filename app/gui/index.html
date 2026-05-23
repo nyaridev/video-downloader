@@ -26,6 +26,7 @@
     <nav class="tab-strip">
       <button type="button" class="page-tab active" data-page="download">Download</button>
       <button type="button" class="page-tab" data-page="settings">Settings</button>
+      <button type="button" class="page-tab" data-page="extras">Extras</button>
     </nav>
 
     <div class="app-body">
@@ -162,6 +163,39 @@
           <div class="settings-actions settings-actions--row">
             <button type="button" id="saveSettingsBtn" class="action-btn">Save Settings</button>
             <button type="button" id="restartBtn" class="action-btn secondary-action">Restart Program</button>
+          </div>
+        </div>
+
+        <div id="page-extras" class="page-view settings-view">
+          <div class="settings-scroll">
+            <div class="settings-block no-border">
+              <span class="label-inline">YouTube runtime</span>
+              <p class="hint">Deno lets yt-dlp solve YouTube challenges. PATH uses a system install; Local uses a copy in this app folder.</p>
+              <div class="source-toggle">
+                <span id="denoSourcePathLabel" class="source-toggle-label active">PATH</span>
+                <label class="pill-switch">
+                  <input type="checkbox" id="denoSourceLocal" />
+                  <span class="pill-track"><span class="pill-knob"></span></span>
+                </label>
+                <span id="denoSourceLocalLabel" class="source-toggle-label">Local</span>
+              </div>
+              <button type="button" id="installDenoBtn" class="action-btn extras-action">Download Deno</button>
+              <p id="denoStatusText" class="hint"></p>
+            </div>
+            <div class="settings-block">
+              <span class="label-inline">Stream merging</span>
+              <p class="hint">ffmpeg merges separate video and audio streams into one MP4. PATH uses a system install; Local downloads into this app folder.</p>
+              <div class="source-toggle">
+                <span id="ffmpegSourcePathLabel" class="source-toggle-label active">PATH</span>
+                <label class="pill-switch">
+                  <input type="checkbox" id="ffmpegSourceLocal" />
+                  <span class="pill-track"><span class="pill-knob"></span></span>
+                </label>
+                <span id="ffmpegSourceLocalLabel" class="source-toggle-label">Local</span>
+              </div>
+              <button type="button" id="installFfmpegBtn" class="action-btn extras-action">Download ffmpeg</button>
+              <p id="ffmpegStatusText" class="hint"></p>
+            </div>
           </div>
         </div>
       </div>

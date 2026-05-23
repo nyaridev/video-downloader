@@ -329,6 +329,40 @@ body.frameless .console-pane {
   background: #44464e;
 }
 
+.action-btn.extras-action {
+  max-width: 240px;
+}
+
+.action-btn:disabled,
+.action-btn.is-installed {
+  background: var(--mode-idle);
+  color: var(--muted);
+  cursor: default;
+}
+
+.action-btn:disabled:hover,
+.action-btn.is-installed:hover {
+  background: var(--mode-idle);
+}
+
+.source-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+.source-toggle-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-width: 42px;
+}
+
+.source-toggle-label.active {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .url-input {
   width: 100%;
   padding: 10px 12px;

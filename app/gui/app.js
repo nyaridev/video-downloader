@@ -247,6 +247,85 @@ function setPage(page) {
   document.querySelectorAll(".page-view").forEach((panel) => {
     panel.classList.toggle("active", panel.id === `page-${page}`);
   });
+  if (page === "extras") {
+    refreshExtrasStatus().catch(() => {});
+  }
+}
+
+function setSourceToggleLabels(pathLabel, localLabel, useLocal) {
+  pathLabel?.classList.toggle("active", !useLocal);
+  localLabel?.classList.toggle("active", useLocal);
+}
+
+function applyToolUi({ btn, text, source, pathStatus, localStatus, downloadLabel }) {
+  if (!btn || !text) return;
+  const useLocal = source === "local";
+  const active = useLocal ? localStatus : pathStatus;
+
+  btn.classList.remove("is-installed");
+  if (active.installed) {
+    btn.textContent = "Installed";
+    btn.disabled = true;
+    btn.classList.add("is-installed");
+    text.textContent = active.version ? `${active.version} — ${active.path}` : active.path;
+    return;
+  }
+
+  if (useLocal) {
+    btn.textContent = downloadLabel;
+    btn.disabled = false;
+    text.textContent = "Not installed. Downloads a local copy into this app folder.";
+  } else {
+    btn.textContent = "Not in PATH";
+    btn.disabled = true;
+    text.textContent = "No system install found on PATH. Switch to Local to download one here.";
+  }
+}
+
+function applyExtrasStatus(status) {
+  const denoLocal = status.deno_source === "local";
+  const ffmpegLocal = status.ffmpeg_source === "local";
+
+  $("denoSourceLocal").checked = denoLocal;
+  $("ffmpegSourceLocal").checked = ffmpegLocal;
+  setSourceToggleLabels($("denoSourcePathLabel"), $("denoSourceLocalLabel"), denoLocal);
+  setSourceToggleLabels($("ffmpegSourcePathLabel"), $("ffmpegSourceLocalLabel"), ffmpegLocal);
+
+  applyToolUi({
+    btn: $("installDenoBtn"),
+    text: $("denoStatusText"),
+    source: status.deno_source,
+    pathStatus: status.deno_path,
+    localStatus: status.deno_local,
+    downloadLabel: "Download Deno",
+  });
+  applyToolUi({
+    btn: $("installFfmpegBtn"),
+    text: $("ffmpegStatusText"),
+    source: status.ffmpeg_source,
+    pathStatus: status.ffmpeg_path,
+    localStatus: status.ffmpeg_local,
+    downloadLabel: "Download ffmpeg",
+  });
+}
+
+function readExtrasSettingsFromForm() {
+  return {
+    deno_source: $("denoSourceLocal").checked ? "local" : "path",
+    ffmpeg_source: $("ffmpegSourceLocal").checked ? "local" : "path",
+  };
+}
+
+async function saveExtrasSettings({ silent = false } = {}) {
+  const saved = await apiCall("save_extras_settings", readExtrasSettingsFromForm());
+  applyExtrasStatus(saved);
+  if (!silent) log("info", "Extras settings saved.");
+}
+
+async function refreshExtrasStatus() {
+  const status = await apiCall("get_extras_status");
+  applyExtrasStatus(status);
+  return status;
 }
 
 function applyDownloadDefaults(defaults) {
@@ -974,6 +1053,7 @@ async function init() {
       $("chkFrameless").checked = defaults.frameless !== false;
       applyFramelessUi(defaults.frameless !== false);
       applyDownloadDefaults(defaults);
+      await refreshExtrasStatus().catch(() => {});
       queueRevision = 0;
       state.views = [{ id: MAIN_VIEW_ID, name: "Main", kind: "main" }];
       state.activeViewId = MAIN_VIEW_ID;
@@ -997,6 +1077,58 @@ async function init() {
       await saveAppSettings({ silent: true });
       log("info", "Restarting program...");
       await apiCall("restart_program");
+    } catch (err) {
+      log("error", err.message);
+    }
+  });
+
+  $("installDenoBtn")?.addEventListener("click", async () => {
+    const btn = $("installDenoBtn");
+    if (!btn || btn.disabled || !$("denoSourceLocal").checked) return;
+    try {
+      btn.disabled = true;
+      btn.textContent = "Installing...";
+      log("info", "Downloading Deno...");
+      const result = await apiCall("install_deno");
+      log(result.ok ? "info" : "error", result.message || "Deno install finished.");
+      if (!result.ok) {
+        await refreshExtrasStatus();
+      }
+    } catch (err) {
+      log("error", err.message);
+      await refreshExtrasStatus();
+    }
+  });
+
+  $("installFfmpegBtn")?.addEventListener("click", async () => {
+    const btn = $("installFfmpegBtn");
+    if (!btn || btn.disabled || !$("ffmpegSourceLocal").checked) return;
+    try {
+      btn.disabled = true;
+      btn.textContent = "Installing...";
+      log("info", "Downloading ffmpeg...");
+      const result = await apiCall("install_ffmpeg");
+      log(result.ok ? "info" : "error", result.message || "ffmpeg install finished.");
+      if (!result.ok) {
+        await refreshExtrasStatus();
+      }
+    } catch (err) {
+      log("error", err.message);
+      await refreshExtrasStatus();
+    }
+  });
+
+  $("denoSourceLocal")?.addEventListener("change", async () => {
+    try {
+      await saveExtrasSettings({ silent: true });
+    } catch (err) {
+      log("error", err.message);
+    }
+  });
+
+  $("ffmpegSourceLocal")?.addEventListener("change", async () => {
+    try {
+      await saveExtrasSettings({ silent: true });
     } catch (err) {
       log("error", err.message);
     }

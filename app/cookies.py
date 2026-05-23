@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from app.config import CHROMIUM_BROWSERS
-from app.paths import ROOT
+from app.paths import WEBVIEW_DIR
 
 log = logging.getLogger(__name__)
 
-COOKIE_CACHE_DIR = ROOT / ".webview"
+COOKIE_CACHE_DIR = WEBVIEW_DIR
 
 _COOKIE_COPY_HELP = (
     "Could not read browser cookies.\n\n"

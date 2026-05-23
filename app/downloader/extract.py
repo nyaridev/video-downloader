@@ -8,6 +8,7 @@ import yt_dlp
 from yt_dlp.utils import DownloadError, ExtractorError
 
 from app.cookies import CookieExportError, cookie_copy_help, export_browser_cookies, is_cookie_copy_error
+from app.downloader.ytdlp_opts import base_ytdlp_opts
 from app.textutil import normalize_log_message
 
 
@@ -19,13 +20,7 @@ def _bot_check_hint(msg: str) -> bool:
 
 
 def extract_info(url: str, opts: dict[str, Any], *, cookie_browser: str | None = None) -> dict[str, Any]:
-    probe = {
-        **opts,
-        "skip_download": True,
-        "quiet": True,
-        "no_color": True,
-        "color": "no",
-    }
+    probe = base_ytdlp_opts(**opts, skip_download=True)
     try:
         with yt_dlp.YoutubeDL(probe) as ydl:
             info = ydl.extract_info(url, download=False)

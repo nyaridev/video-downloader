@@ -10,6 +10,9 @@ from typing import Any
 from app import formats
 from app.browser_launch import launch_for_youtube_signin
 from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, save_settings
+from app.deno import install_local_deno
+from app.extras import get_extras_status, save_extras_settings
+from app.ffmpeg_tool import install_local_ffmpeg
 from app.paths import DEFAULT_OUTPUT, ROOT, ensure_output_root
 from app.queue import DownloadQueue
 from app.restart import restart_application
@@ -101,6 +104,26 @@ class Api:
     def restart_program(self) -> dict[str, Any]:
         threading.Thread(target=restart_application, daemon=True).start()
         return {"ok": True, "message": "Restarting..."}
+
+    def get_extras_status(self) -> dict[str, Any]:
+        return get_extras_status()
+
+    def save_extras_settings(self, settings: dict[str, Any]) -> dict[str, Any]:
+        return save_extras_settings(settings)
+
+    def install_deno(self) -> dict[str, Any]:
+        result = install_local_deno()
+        if result.get("ok") and result.get("installed"):
+            threading.Thread(target=restart_application, daemon=True).start()
+            result["message"] = "Deno installed. Restarting..."
+        return result
+
+    def install_ffmpeg(self) -> dict[str, Any]:
+        result = install_local_ffmpeg()
+        if result.get("ok") and result.get("installed"):
+            threading.Thread(target=restart_application, daemon=True).start()
+            result["message"] = "ffmpeg installed. Restarting..."
+        return result
 
     def minimize_window(self) -> None:
         if _webview_window:

@@ -8,9 +8,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.paths import ROOT
+from app.paths import ROOT, USER_DIR, ensure_user_layout
 
-USER_DIR = ROOT / ".user"
 SETTINGS_FILE = USER_DIR / "settings.json"
 LEGACY_SETTINGS_FILE = ROOT / "settings.json"
 
@@ -35,7 +34,14 @@ DEFAULTS: dict[str, Any] = {
     "combine_streams": True,
     "organize": False,
     "concurrency": 8,
+    "deno_source": "path",
+    "ffmpeg_source": "path",
 }
+
+
+def normalize_tool_source(value: Any) -> str:
+    source = str(value or "path").strip().lower()
+    return source if source in ("path", "local") else "path"
 
 
 def normalize_concurrency(value: Any) -> int:
@@ -65,6 +71,7 @@ def _migrate_legacy_settings() -> None:
 
 
 def load_settings() -> dict[str, Any]:
+    ensure_user_layout()
     _migrate_legacy_settings()
     data = dict(DEFAULTS)
     if SETTINGS_FILE.is_file():
@@ -87,6 +94,8 @@ def load_settings() -> dict[str, Any]:
     data["organize"] = bool(data.get("organize", False))
     legacy = _legacy_concurrency(data)
     data["concurrency"] = legacy if legacy is not None else normalize_concurrency(data.get("concurrency", 8))
+    data["deno_source"] = normalize_tool_source(data.get("deno_source"))
+    data["ffmpeg_source"] = normalize_tool_source(data.get("ffmpeg_source"))
     return data
 
 

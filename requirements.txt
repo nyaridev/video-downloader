@@ -1,4 +1,4 @@
 # Pinned top-level deps for pip / venv fallback (see uv.lock for full lock)
-yt-dlp==2026.3.17
+yt-dlp[default]==2026.3.17
 pywebview==6.2.1
 browser-cookie3>=0.19.1

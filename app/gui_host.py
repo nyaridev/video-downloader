@@ -8,9 +8,7 @@ import webview
 
 from app.api import Api, bind_webview_window
 from app.config import load_settings
-from app.paths import GUI_DIR, ROOT
-
-_STORAGE = ROOT / ".webview"
+from app.paths import GUI_DIR, WEBVIEW_DIR
 
 
 def _preferred_gui() -> str | None:
@@ -24,7 +22,7 @@ def run_app() -> None:
     frameless = bool(settings.get("frameless", True))
     api = Api()
     index_html = GUI_DIR / "index.html"
-    _STORAGE.mkdir(parents=True, exist_ok=True)
+    WEBVIEW_DIR.mkdir(parents=True, exist_ok=True)
 
     window = webview.create_window(
         "Video Downloader",
@@ -47,7 +45,7 @@ def run_app() -> None:
         "debug": False,
         "http_server": True,
         "private_mode": False,
-        "storage_path": str(_STORAGE),
+        "storage_path": str(WEBVIEW_DIR),
     }
     gui = _preferred_gui()
     if gui:

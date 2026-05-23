@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
-import shutil
+import subprocess
 from pathlib import Path
 from typing import Any, Callable
 
 import yt_dlp
 from yt_dlp.utils import DownloadError
 
-from app.config import load_settings
+from app.config import load_settings, normalize_tool_source
 from app.cookies import CookieExportError, ytdlp_cookie_opts
 from app.textutil import normalize_log_message, strip_ansi
 from app.formats import build_format_string, pick_nearest_height
 from app.paths import resolve_download_dir
 from app.downloader.extract import extract_info
+from app.downloader.ytdlp_opts import base_ytdlp_opts
 from app.downloader.metadata import write_metadata
 from app.downloader.verify import collect_heights, expected_files_present
+from app.ffmpeg_tool import ffmpeg_available
 
 LogFn = Callable[[str, str], None]
 ProgressFn = Callable[[dict[str, Any]], None]
@@ -62,13 +64,21 @@ class DownloadEngine:
         self._log_raw(level, normalize_log_message(message))
 
     def _warn_ffmpeg_once(self) -> None:
-        if self._warned_ffmpeg or shutil.which("ffmpeg"):
+        settings = load_settings()
+        source = normalize_tool_source(settings.get("ffmpeg_source"))
+        if self._warned_ffmpeg or ffmpeg_available(source):
             return
         self._warned_ffmpeg = True
-        self._log(
-            "warn",
-            "ffmpeg was not found in PATH. Install ffmpeg to merge streams into .mp4.",
-        )
+        if source == "local":
+            self._log(
+                "warn",
+                "Local ffmpeg was not found. Install it from Extras to merge streams into .mp4.",
+            )
+        else:
+            self._log(
+                "warn",
+                "ffmpeg was not found in PATH. Install ffmpeg or switch to a local copy in Extras.",
+            )
 
     def download_job(self, job: dict[str, Any]) -> dict[str, Any]:
         self._warn_ffmpeg_once()
@@ -244,21 +254,18 @@ class DownloadEngine:
         return {"ok": True, "title": title, "id": video_id, "path": str(target_dir)}
 
     def _run_download(self, url: str, opts: dict[str, Any]) -> None:
-        run_opts = {**opts, "no_color": True, "color": "no"}
-        with yt_dlp.YoutubeDL(run_opts) as ydl:
+        with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
 
     def _base_opts(self, job: dict[str, Any]) -> dict[str, Any]:
         settings = job.get("cookie_settings") or load_settings()
-        opts: dict[str, Any] = {
-            "noplaylist": True,
-            "ignoreerrors": False,
-            "no_warnings": False,
-            "quiet": True,
-            "nocheckcertificate": True,
-            "no_color": True,
-            "color": "no",
-        }
+        opts = base_ytdlp_opts(
+            noplaylist=True,
+            ignoreerrors=False,
+            no_warnings=False,
+            quiet=True,
+            nocheckcertificate=True,
+        )
         opts.update(ytdlp_cookie_opts(settings))
         return opts
 

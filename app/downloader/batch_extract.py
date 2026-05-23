@@ -9,20 +9,19 @@ from yt_dlp.utils import DownloadError
 from app.cookies import ytdlp_cookie_opts
 from app.config import load_settings
 from app.downloader.extract import extract_info
+from app.downloader.ytdlp_opts import base_ytdlp_opts
 
 
 def batch_list_opts(job: dict[str, Any]) -> dict[str, Any]:
     settings = job.get("cookie_settings") or load_settings()
-    return {
+    return base_ytdlp_opts(
         **ytdlp_cookie_opts(settings),
-        "noplaylist": False,
-        "ignoreerrors": False,
-        "no_warnings": False,
-        "quiet": True,
-        "nocheckcertificate": True,
-        "no_color": True,
-        "color": "no",
-    }
+        noplaylist=False,
+        ignoreerrors=False,
+        no_warnings=False,
+        quiet=True,
+        nocheckcertificate=True,
+    )
 
 
 def extract_batch_entries(
