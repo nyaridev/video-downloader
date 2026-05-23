@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import locale
 import shutil
 import sys
 from pathlib import Path
@@ -92,6 +93,66 @@ def normalize_language(value: Any) -> str:
     return language if language in LANGUAGE_OPTIONS else "en"
 
 
+def _locale_tags() -> list[str]:
+    tags: list[str] = []
+    try:
+        if hasattr(locale, "getpreferredlanguages"):
+            tags.extend(locale.getpreferredlanguages(False))
+    except (locale.Error, ValueError, TypeError, AttributeError):
+        pass
+
+    if not tags:
+        try:
+            code, _encoding = locale.getdefaultlocale()
+            if code:
+                tags.append(code)
+        except (ValueError, AttributeError, TypeError):
+            pass
+    return tags
+
+
+def _map_locale_to_language(tag: str) -> str | None:
+    normalized = str(tag or "").strip().lower().replace("-", "_")
+    if not normalized:
+        return None
+
+    base = normalized.split("_")[0]
+    if base in LANGUAGE_OPTIONS:
+        return base
+    if base == "zh":
+        return "zh"
+    return None
+
+
+def _windows_ui_language() -> str | None:
+    if sys.platform != "win32":
+        return None
+    primary_to_language = {
+        0x09: "en",
+        0x15: "pl",
+        0x04: "zh",
+    }
+    try:
+        import ctypes
+
+        lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+        return primary_to_language.get(lang_id & 0x3FF)
+    except Exception:
+        return None
+
+
+def detect_system_language() -> str:
+    win_lang = _windows_ui_language()
+    if win_lang:
+        return win_lang
+
+    for tag in _locale_tags():
+        matched = _map_locale_to_language(tag)
+        if matched:
+            return matched
+    return "en"
+
+
 def normalize_concurrency(value: Any) -> int:
     try:
         n = int(value)
@@ -135,7 +196,10 @@ def load_settings() -> dict[str, Any]:
         data["cookies_browser"] = _DEFAULT_BROWSER
     data["frameless"] = bool(data.get("frameless", True))
     data["theme"] = normalize_theme(data.get("theme"))
-    data["language"] = normalize_language(data.get("language"))
+    if "language" not in loaded:
+        data["language"] = detect_system_language()
+    else:
+        data["language"] = normalize_language(data.get("language"))
     data["use_browser_cookies"] = bool(data.get("use_browser_cookies", True))
     data["want_video"] = bool(data.get("want_video", True))
     data["want_audio"] = bool(data.get("want_audio", True))
