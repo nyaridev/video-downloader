@@ -204,6 +204,28 @@ class DownloadEngine:
                     },
                 )
 
+            if want_audio:
+                self._set_item(job_id, "audio")
+                self._run_download(
+                    url,
+                    {
+                        **opts_base,
+                        "format": build_format_string(
+                            want_video=False,
+                            want_audio=True,
+                            video_quality=video_quality,
+                            audio_quality=audio_quality,
+                        ),
+                        "postprocessors": [
+                            {"key": "FFmpegExtractAudio", "preferredcodec": "m4a", "preferredquality": "0"}
+                        ],
+                        "outtmpl": {"default": outtmpl},
+                        "writethumbnail": False,
+                        "writeinfojson": False,
+                        **self._download_hooks(job_id, combine_streams=False),
+                    },
+                )
+
             if want_video:
                 self._set_item(job_id, "video")
                 self._run_download(
@@ -230,28 +252,6 @@ class DownloadEngine:
                         video_id,
                         keep_separate_audio=want_audio,
                     )
-
-            if want_audio:
-                self._set_item(job_id, "audio")
-                self._run_download(
-                    url,
-                    {
-                        **opts_base,
-                        "format": build_format_string(
-                            want_video=False,
-                            want_audio=True,
-                            video_quality=video_quality,
-                            audio_quality=audio_quality,
-                        ),
-                        "postprocessors": [
-                            {"key": "FFmpegExtractAudio", "preferredcodec": "m4a", "preferredquality": "0"}
-                        ],
-                        "outtmpl": {"default": outtmpl},
-                        "writethumbnail": False,
-                        "writeinfojson": False,
-                        **self._download_hooks(job_id, combine_streams=False),
-                    },
-                )
 
         except (DownloadError, CookieExportError) as exc:
             self._log("error", str(exc))

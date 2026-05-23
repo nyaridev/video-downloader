@@ -46,11 +46,11 @@ def expected_files_present(
     if want_thumbnail:
         checks.append(_has_artifact(directory, video_id, (".jpg", ".jpeg", ".png", ".webp")))
 
-    if want_video:
-        checks.append(_has_artifact(directory, video_id, (".mp4", ".mkv", ".mov")))
-
     if want_audio:
         checks.append(_has_artifact(directory, video_id, (".m4a", ".opus", ".mp3", ".ogg", ".wav", ".aac")))
+
+    if want_video:
+        checks.append(_has_artifact(directory, video_id, (".mp4", ".mkv", ".mov")))
 
     return bool(checks) and all(checks)
 

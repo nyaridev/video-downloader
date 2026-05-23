@@ -7,11 +7,13 @@ import time
 import uuid
 from typing import Any, Callable
 
-from app.config import load_settings
+from app.config import load_settings, normalize_concurrency
 from app.downloader.engine import DownloadEngine
 from app.textutil import normalize_log_message
 
 EventFn = Callable[[str, dict[str, Any]], None]
+
+ITEM_ORDER = ("metadata", "thumbnail", "audio", "video")
 
 
 class DownloadQueue:
@@ -22,6 +24,7 @@ class DownloadQueue:
         self._dispatcher: threading.Thread | None = None
         self._active_threads: dict[str, threading.Thread] = {}
         self._engines: dict[str, DownloadEngine] = {}
+        self._concurrency_limit = normalize_concurrency(load_settings().get("concurrency"))
 
     def _log(self, level: str, message: str) -> None:
         self._emit("log", {"level": level, "message": normalize_log_message(message)})
@@ -37,8 +40,8 @@ class DownloadQueue:
                         if phase == "combining":
                             job["progress"] = {
                                 **prev,
-                                "status": "combining",
-                                "item": data.get("item") or "combining",
+                                "status": "downloading",
+                                "item": prev.get("item") or "video",
                             }
                         elif phase == "downloading" and not data.get("downloaded_bytes"):
                             job["progress"] = {
@@ -56,9 +59,9 @@ class DownloadQueue:
                                 "downloaded_bytes": done,
                                 "total_bytes": total,
                                 "percent": pct,
-                                "speed": data.get("speed"),
-                                "eta": data.get("eta"),
-                                "label": data.get("_percent_str") or "",
+                                "speed": data.get("speed") if data.get("speed") is not None else prev.get("speed"),
+                                "eta": data.get("eta") if data.get("eta") is not None else prev.get("eta"),
+                                "label": data.get("_percent_str") or prev.get("label") or "",
                             }
                         break
         self._emit("progress", data)
@@ -73,16 +76,13 @@ class DownloadQueue:
 
     @staticmethod
     def _job_items(job: dict[str, Any]) -> list[str]:
-        items: list[str] = []
-        if job.get("want_video"):
-            items.append("video")
-        if job.get("want_audio"):
-            items.append("audio")
-        if job.get("want_metadata"):
-            items.append("metadata")
-        if job.get("want_thumbnail"):
-            items.append("thumbnail")
-        return items
+        flags = {
+            "metadata": job.get("want_metadata"),
+            "thumbnail": job.get("want_thumbnail"),
+            "audio": job.get("want_audio"),
+            "video": job.get("want_video"),
+        }
+        return [key for key in ITEM_ORDER if flags.get(key)]
 
     def _job_snapshot(self, job: dict[str, Any]) -> dict[str, Any]:
         progress = job.get("progress") or {}
@@ -110,19 +110,38 @@ class DownloadQueue:
             "progress": {},
         }
         with self._lock:
+            if "concurrency" in job_config:
+                self._concurrency_limit = normalize_concurrency(job_config["concurrency"])
             self._jobs.append(job)
         self._emit("queue", {"jobs": self.list_jobs()})
         self._ensure_dispatcher()
         return job_id
 
+    def remove(self, job_id: str) -> bool:
+        with self._lock:
+            for idx, job in enumerate(self._jobs):
+                if job["id"] != job_id:
+                    continue
+                if job["status"] == "running":
+                    job["cancel_flag"]["cancel"] = True
+                del self._jobs[idx]
+                self._emit("queue", {"jobs": self.list_jobs()})
+                return True
+        return False
+
+    def clear(self) -> int:
+        with self._lock:
+            for job in self._jobs:
+                if job["status"] == "running":
+                    job["cancel_flag"]["cancel"] = True
+            removed = len(self._jobs)
+            self._jobs = []
+        if removed:
+            self._emit("queue", {"jobs": self.list_jobs()})
+        return removed
+
     def _batch_size(self) -> int:
-        settings = load_settings()
-        if not settings.get("async_download"):
-            return 1
-        try:
-            return max(1, min(32, int(settings.get("batch_count", 8))))
-        except (TypeError, ValueError):
-            return 8
+        return self._concurrency_limit
 
     def _ensure_dispatcher(self) -> None:
         if self._dispatcher and self._dispatcher.is_alive():

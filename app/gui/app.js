@@ -89,19 +89,44 @@ function formatBytes(bytes) {
   return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
+function formatSpeed(bytesPerSec) {
+  if (!bytesPerSec || bytesPerSec <= 0) return "";
+  return `${formatBytes(bytesPerSec)}/s`;
+}
+
+function clampConcurrency(value) {
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n)) return 8;
+  return Math.max(1, Math.min(100, n));
+}
+
+function setConcurrency(value) {
+  const v = clampConcurrency(value);
+  $("concurrencySlider").value = v;
+  $("concurrencyInput").value = v;
+}
+
+function getConcurrency() {
+  return clampConcurrency($("concurrencyInput").value || $("concurrencySlider").value);
+}
+
+function displayActiveItem(job) {
+  const p = job.progress || {};
+  const item = p.item;
+  if (item === "combining") {
+    const items = job.items || [];
+    if (items.includes("video")) return "video";
+    return items.length ? items[items.length - 1] : null;
+  }
+  return item || null;
+}
+
 function truncateUrl(url, max = 48) {
   if (!url) return "";
   return url.length > max ? `${url.slice(0, max)}…` : url;
 }
 
-function queuePhase(job) {
-  const p = job.progress || {};
-  if (job.status === "running" && p.status === "combining") return "combining";
-  return job.status;
-}
-
 function statusClass(status) {
-  if (status === "combining") return "queue-item--combining";
   if (status === "running") return "queue-item--running";
   if (status === "done") return "queue-item--done";
   if (status === "error") return "queue-item--error";
@@ -112,7 +137,6 @@ function statusLabel(status) {
   const labels = {
     queued: "Queued",
     running: "Downloading",
-    combining: "Combining",
     done: "Complete",
     error: "Error",
   };
@@ -124,30 +148,38 @@ const ITEM_LABELS = {
   audio: "Audio",
   metadata: "Metadata",
   thumbnail: "Thumbnail",
-  combining: "Combining",
 };
+
+const ITEM_ORDER = ["metadata", "thumbnail", "audio", "video"];
+
+function itemTagState(job, key, activeItem) {
+  const items = job.items || [];
+  if (!items.includes(key)) return null;
+  if (job.status === "done") return "done";
+  if (activeItem === key) return "active";
+  const activeIdx = ITEM_ORDER.indexOf(activeItem);
+  const keyIdx = ITEM_ORDER.indexOf(key);
+  if (activeIdx >= 0 && keyIdx >= 0 && keyIdx < activeIdx) return "done";
+  return "pending";
+}
 
 function buildItemTags(job, activeItem) {
   const tags = document.createElement("div");
   tags.className = "queue-item-tags";
   const items = job.items || [];
-  if (!items.length && activeItem !== "combining") {
+  if (!items.length) {
     return tags;
   }
   items.forEach((key) => {
+    const state = itemTagState(job, key, activeItem);
+    if (!state) return;
     const span = document.createElement("span");
     span.className = "item-tag";
-    if (activeItem === key) span.classList.add("item-tag--active");
-    if (job.status === "done") span.classList.add("item-tag--done");
+    if (state === "active") span.classList.add("item-tag--active");
+    if (state === "done") span.classList.add("item-tag--done");
     span.textContent = ITEM_LABELS[key] || key;
     tags.appendChild(span);
   });
-  if (activeItem === "combining") {
-    const span = document.createElement("span");
-    span.className = "item-tag item-tag--active";
-    span.textContent = ITEM_LABELS.combining;
-    tags.appendChild(span);
-  }
   return tags;
 }
 
@@ -183,9 +215,7 @@ function applyDownloadDefaults(defaults) {
   $("chkCombine").checked = defaults.combine_streams !== false;
   $("layoutOrg").checked = !!defaults.organize;
   $("layoutRaw").checked = !defaults.organize;
-  $("chkAsync").checked = !!defaults.async_download;
-  $("batchCount").value = defaults.batch_count ?? 8;
-  $("batchCount").disabled = !$("chkAsync").checked;
+  setConcurrency(defaults.concurrency ?? 8);
 }
 
 function readSettingsFromForm() {
@@ -204,8 +234,7 @@ function readSettingsFromForm() {
     bundle: $("chkBundle").checked,
     combine_streams: $("chkCombine").checked,
     organize: $("layoutOrg").checked,
-    async_download: $("chkAsync").checked,
-    batch_count: parseInt($("batchCount").value, 10) || 8,
+    concurrency: getConcurrency(),
   };
 }
 
@@ -248,20 +277,19 @@ function readConfig() {
 function aggregateQueueStats(jobs) {
   const totalJobs = jobs.length;
   const doneJobs = jobs.filter((j) => j.status === "done").length;
-  const runningJobs = jobs.filter(
-    (j) => j.status === "running" && (j.progress || {}).status !== "combining"
-  ).length;
-  const combiningJobs = jobs.filter(
-    (j) => j.status === "running" && (j.progress || {}).status === "combining"
-  ).length;
+  const runningJobs = jobs.filter((j) => j.status === "running").length;
   const errorJobs = jobs.filter((j) => j.status === "error").length;
 
   let downloaded = 0;
   let total = 0;
+  let speed = 0;
   jobs.forEach((job) => {
     const p = job.progress || {};
     downloaded += p.downloaded_bytes || 0;
     total += p.total_bytes || 0;
+    if (job.status === "running" && p.speed > 0) {
+      speed += p.speed;
+    }
   });
 
   const pct = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0;
@@ -271,11 +299,11 @@ function aggregateQueueStats(jobs) {
     totalJobs,
     doneJobs,
     runningJobs,
-    combiningJobs,
     errorJobs,
     finishedCount,
     downloaded,
     total,
+    speed,
     pct,
   };
 }
@@ -295,16 +323,18 @@ function updateQueueSummary(jobs) {
   if (stats.runningJobs > 0) {
     summary.textContent += ` · ${stats.runningJobs} downloading`;
   }
-  if (stats.combiningJobs > 0) {
-    summary.textContent += ` · ${stats.combiningJobs} combining`;
-  }
 
+  const byteParts = [];
   if (stats.total > 0) {
-    bytes.textContent = `${formatBytes(stats.downloaded)} / ${formatBytes(stats.total)}`;
-  } else if (stats.combiningJobs > 0) {
-    bytes.textContent = "Combining streams";
+    byteParts.push(`${formatBytes(stats.downloaded)} / ${formatBytes(stats.total)}`);
   } else if (stats.runningJobs > 0) {
-    bytes.textContent = `${formatBytes(stats.downloaded)} downloaded`;
+    byteParts.push(`${formatBytes(stats.downloaded)} downloaded`);
+  }
+  if (stats.speed > 0) {
+    byteParts.push(formatSpeed(stats.speed));
+  }
+  if (byteParts.length) {
+    bytes.textContent = byteParts.join(" · ");
   } else {
     bytes.textContent = stats.doneJobs ? "All transfers finished" : "Waiting to start";
   }
@@ -316,13 +346,6 @@ function setOverallProgress(jobs, currentProgress) {
   const stats = aggregateQueueStats(jobs);
 
   let pct = stats.pct;
-  const anyCombining = jobs.some(
-    (j) => j.status === "running" && (j.progress || {}).status === "combining"
-  );
-  if (anyCombining && !currentProgress?.downloaded_bytes) {
-    text.textContent = "Combining streams...";
-    return;
-  }
 
   if (currentProgress && currentProgress.status === "downloading") {
     const curTotal = currentProgress.total_bytes || 0;
@@ -348,10 +371,6 @@ function setOverallProgress(jobs, currentProgress) {
 
   bar.style.width = `${pct}%`;
 
-  const speed =
-    currentProgress && currentProgress.speed
-      ? `${(currentProgress.speed / 1024 / 1024).toFixed(2)} MB/s`
-      : "";
   const eta =
     currentProgress && currentProgress.eta != null ? `ETA ${currentProgress.eta}s` : "";
   const pctLabel = currentProgress
@@ -360,10 +379,31 @@ function setOverallProgress(jobs, currentProgress) {
   const parts = [
     pct > 0 ? `${pct.toFixed(1)}% overall` : null,
     pctLabel,
-    speed,
+    stats.speed > 0 ? formatSpeed(stats.speed) : null,
     eta,
   ].filter(Boolean);
   text.textContent = parts.join(" · ") || "Downloading...";
+}
+
+async function removeQueueJob(jobId) {
+  try {
+    const res = await apiCall("remove_queue_job", jobId);
+    renderQueue(res.queue);
+  } catch (err) {
+    log("error", err.message);
+  }
+}
+
+async function clearQueue() {
+  try {
+    const res = await apiCall("clear_queue");
+    renderQueue(res.queue);
+    if (res.removed > 0) {
+      log("info", `Cleared ${res.removed} item(s) from queue.`);
+    }
+  } catch (err) {
+    log("error", err.message);
+  }
 }
 
 function renderQueue(jobs) {
@@ -382,14 +422,29 @@ function renderQueue(jobs) {
   }
 
   [...state.jobs].reverse().forEach((job) => {
-    const phase = queuePhase(job);
+    const status = job.status;
     const li = document.createElement("li");
-    li.className = `queue-item ${statusClass(phase)}`;
+    li.className = `queue-item ${statusClass(status)}`;
     li.dataset.jobId = job.id;
 
     const head = document.createElement("div");
     head.className = "queue-item-head";
-    head.innerHTML = `<strong>${job.mode || "video"}</strong><span class="queue-status-badge">${statusLabel(phase)}</span>`;
+
+    const headLeft = document.createElement("div");
+    headLeft.className = "queue-item-head-left";
+    headLeft.innerHTML = `<strong>${job.mode || "video"}</strong><span class="queue-status-badge">${statusLabel(status)}</span>`;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "queue-item-close";
+    closeBtn.setAttribute("aria-label", "Remove from queue");
+    closeBtn.textContent = "×";
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeQueueJob(job.id);
+    });
+
+    head.append(headLeft, closeBtn);
 
     const url = document.createElement("div");
     url.className = "queue-item-url";
@@ -397,7 +452,7 @@ function renderQueue(jobs) {
     url.title = job.url;
 
     const p = job.progress || {};
-    const activeItem = p.item || (phase === "combining" ? "combining" : null);
+    const activeItem = displayActiveItem(job);
     const tags = buildItemTags(job, activeItem);
 
     const fileLine = document.createElement("div");
@@ -414,24 +469,29 @@ function renderQueue(jobs) {
     const itemPct =
       job.status === "done"
         ? 100
-        : phase === "combining"
-          ? 100
-          : p.percent != null
-            ? Math.min(100, p.percent)
-            : 0;
+        : p.percent != null
+          ? Math.min(100, p.percent)
+          : 0;
     progressBar.style.width = `${itemPct}%`;
     progressWrap.appendChild(progressBar);
 
     const meta = document.createElement("div");
     meta.className = "queue-item-meta";
-    if (phase === "combining") {
-      meta.textContent = "Merging video and audio";
-    } else if (job.status === "running" && (p.total_bytes || p.downloaded_bytes)) {
-      meta.textContent = `${formatBytes(p.downloaded_bytes || 0)} / ${formatBytes(p.total_bytes || 0)}`;
+    const metaParts = [];
+    if (job.status === "running" && (p.total_bytes || p.downloaded_bytes)) {
+      metaParts.push(
+        `${formatBytes(p.downloaded_bytes || 0)} / ${formatBytes(p.total_bytes || 0)}`
+      );
+    }
+    if (job.status === "running" && p.speed > 0) {
+      metaParts.push(formatSpeed(p.speed));
+    }
+    if (metaParts.length) {
+      meta.textContent = metaParts.join(" · ");
     } else if (job.title) {
       meta.textContent = job.title;
     } else {
-      meta.textContent = statusLabel(phase);
+      meta.textContent = statusLabel(status);
     }
 
     const parts = [head, url, tags];
@@ -455,8 +515,8 @@ function setProgress(data) {
       if (data.status === "combining") {
         job.progress = {
           ...prev,
-          status: "combining",
-          item: data.item || "combining",
+          status: "downloading",
+          item: prev.item || "video",
         };
       } else if (data.status === "downloading" && !data.downloaded_bytes && !data.total_bytes) {
         job.progress = {
@@ -473,9 +533,9 @@ function setProgress(data) {
           downloaded_bytes: done,
           total_bytes: total,
           percent: total > 0 ? (done / total) * 100 : prev.percent || 0,
-          speed: data.speed,
-          eta: data.eta,
-          label: data._percent_str || "",
+          speed: data.speed ?? prev.speed,
+          eta: data.eta ?? prev.eta,
+          label: data._percent_str || prev.label || "",
         };
         if (data.status === "finished") {
           job.progress.percent = 100;
@@ -581,8 +641,6 @@ const DOWNLOAD_SETTING_IDS = [
   "chkCombine",
   "layoutRaw",
   "layoutOrg",
-  "chkAsync",
-  "batchCount",
 ];
 
 function bindDownloadSettingsAutosave() {
@@ -590,12 +648,7 @@ function bindDownloadSettingsAutosave() {
     const el = $(id);
     if (!el) return;
     const evt = el.type === "checkbox" || el.type === "radio" ? "change" : "input";
-    el.addEventListener(evt, () => {
-      if (id === "chkAsync") {
-        $("batchCount").disabled = !$("chkAsync").checked;
-      }
-      scheduleSaveSettings();
-    });
+    el.addEventListener(evt, scheduleSaveSettings);
   });
   $("outputDir").addEventListener("change", scheduleSaveSettings);
 }
@@ -695,10 +748,27 @@ async function init() {
     }
   });
 
+  $("concurrencySlider").addEventListener("input", () => {
+    setConcurrency($("concurrencySlider").value);
+  });
+
+  $("concurrencyInput").addEventListener("input", () => {
+    setConcurrency($("concurrencyInput").value);
+  });
+
+  $("concurrencyInput").addEventListener("blur", () => {
+    setConcurrency($("concurrencyInput").value);
+  });
+
+  $("clearQueueBtn").addEventListener("click", () => {
+    clearQueue();
+  });
+
   $("downloadBtn").addEventListener("click", async () => {
     try {
       const config = readConfig();
       if (!config.url) throw new Error("Enter a YouTube URL.");
+      config.concurrency = getConcurrency();
       await saveAppSettings({ silent: true });
       const res = await apiCall("enqueue_download", config);
       renderQueue(res.queue);

@@ -34,9 +34,27 @@ DEFAULTS: dict[str, Any] = {
     "bundle": True,
     "combine_streams": True,
     "organize": False,
-    "async_download": True,
-    "batch_count": 8,
+    "concurrency": 8,
 }
+
+
+def normalize_concurrency(value: Any) -> int:
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        n = 8
+    return max(1, min(100, n))
+
+
+def _legacy_concurrency(data: dict[str, Any]) -> int | None:
+    if "concurrency" in data:
+        return None
+    if not data.get("async_download", True):
+        return 1
+    try:
+        return normalize_concurrency(data.get("batch_count", 8))
+    except (TypeError, ValueError):
+        return 8
 
 
 def _migrate_legacy_settings() -> None:
@@ -67,12 +85,8 @@ def load_settings() -> dict[str, Any]:
     data["bundle"] = bool(data.get("bundle", True))
     data["combine_streams"] = bool(data.get("combine_streams", True))
     data["organize"] = bool(data.get("organize", False))
-    data["async_download"] = bool(data.get("async_download", True))
-    try:
-        batch = int(data.get("batch_count", 8))
-    except (TypeError, ValueError):
-        batch = 8
-    data["batch_count"] = max(1, min(32, batch))
+    legacy = _legacy_concurrency(data)
+    data["concurrency"] = legacy if legacy is not None else normalize_concurrency(data.get("concurrency", 8))
     return data
 
 

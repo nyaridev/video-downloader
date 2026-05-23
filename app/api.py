@@ -9,7 +9,7 @@ from typing import Any
 
 from app import formats
 from app.browser_launch import launch_for_youtube_signin
-from app.config import BROWSER_OPTIONS, load_settings, save_settings
+from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, save_settings
 from app.paths import DEFAULT_OUTPUT, ROOT, ensure_output_root
 from app.queue import DownloadQueue
 from app.restart import restart_application
@@ -63,8 +63,7 @@ class Api:
             "bundle": settings["bundle"],
             "combine_streams": settings["combine_streams"],
             "organize": settings["organize"],
-            "async_download": settings["async_download"],
-            "batch_count": settings["batch_count"],
+            "concurrency": settings["concurrency"],
         }
 
     def save_app_settings(self, settings: dict[str, Any]) -> dict[str, Any]:
@@ -73,11 +72,7 @@ class Api:
         if browser not in BROWSER_OPTIONS:
             browser = current["cookies_browser"]
 
-        try:
-            batch_count = int(settings.get("batch_count", current["batch_count"]))
-        except (TypeError, ValueError):
-            batch_count = current["batch_count"]
-        batch_count = max(1, min(32, batch_count))
+        concurrency = normalize_concurrency(settings.get("concurrency", current["concurrency"]))
 
         output_dir = (settings.get("output_dir") or "").strip()
         if output_dir:
@@ -99,8 +94,7 @@ class Api:
             "bundle": bool(settings.get("bundle", True)),
             "combine_streams": bool(settings.get("combine_streams", True)),
             "organize": bool(settings.get("organize", False)),
-            "async_download": bool(settings.get("async_download", True)),
-            "batch_count": batch_count,
+            "concurrency": concurrency,
         }
         return save_settings(updates)
 
@@ -150,13 +144,23 @@ class Api:
     def enqueue_download(self, config: dict[str, Any]) -> dict[str, Any]:
         config = dict(config)
         config["output_dir"] = config.get("output_dir") or self._output_dir
-        config["cookie_settings"] = load_settings()
+        settings = load_settings()
+        config["cookie_settings"] = settings
+        config["concurrency"] = normalize_concurrency(config.get("concurrency", settings["concurrency"]))
         ensure_output_root(config["output_dir"])
         job_id = self._queue.add(config)
         return {"job_id": job_id, "queue": self._queue.list_jobs()}
 
     def get_queue(self) -> list[dict[str, Any]]:
         return self._queue.list_jobs()
+
+    def remove_queue_job(self, job_id: str) -> dict[str, Any]:
+        removed = self._queue.remove(job_id)
+        return {"ok": removed, "queue": self._queue.list_jobs()}
+
+    def clear_queue(self) -> dict[str, Any]:
+        count = self._queue.clear()
+        return {"ok": True, "removed": count, "queue": self._queue.list_jobs()}
 
     def _pick_file(self, filetypes: list[tuple[str, str]], initial: str) -> str | None:
         result: list[str | None] = [None]

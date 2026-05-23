@@ -100,19 +100,31 @@
                 </label>
               </div>
             </div>
-            <div class="option-group">
-              <span class="option-group-label">Concurrent</span>
-              <div class="async-row">
-                <label class="toggle-card toggle-card--grow" data-tip="Download multiple queue items at the same time, up to the batch size limit.">
-                  <span class="pill-switch"><input type="checkbox" id="chkAsync" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
-                  <span class="toggle-label">Async download</span>
-                </label>
-                <label class="batch-field" for="batchCount" data-tip="Maximum number of files to download in parallel when async is enabled.">
-                  <span class="field-compact">Batch</span>
-                  <input type="number" id="batchCount" class="batch-input" min="1" max="32" value="8" />
-                </label>
+            <div class="option-group option-group--concurrency">
+              <div class="concurrency-head">
+                <span class="option-group-label">Concurrent downloads</span>
+                <input
+                  type="number"
+                  id="concurrencyInput"
+                  class="concurrency-input"
+                  min="1"
+                  max="100"
+                  step="1"
+                  value="8"
+                  aria-label="Concurrent downloads"
+                />
               </div>
-              <p class="hint">Download up to this many files at once when async is enabled.</p>
+              <input
+                type="range"
+                id="concurrencySlider"
+                class="concurrency-slider"
+                min="1"
+                max="100"
+                step="1"
+                value="8"
+                data-tip="How many queue items download at once. Applies when you click Download, not while a batch is running."
+              />
+              <p class="hint">1 = one at a time, 100 = maximum parallel. Takes effect on the next Download click.</p>
             </div>
           </div>
           </div>
@@ -157,7 +169,10 @@
       <aside class="side-pane">
         <div class="status-head">
           <span class="label-inline">Queue</span>
-          <span id="queueSummary" class="queue-summary">0 / 0 files</span>
+          <div class="status-head-actions">
+            <span id="queueSummary" class="queue-summary">0 / 0 files</span>
+            <button type="button" id="clearQueueBtn" class="btn-sm" title="Clear finished and queued items">Clear</button>
+          </div>
         </div>
         <ul id="queueList" class="queue-list"></ul>
         <p id="queueBytes" class="queue-bytes">—</p>
