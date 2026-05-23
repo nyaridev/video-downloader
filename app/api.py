@@ -67,6 +67,7 @@ class Api:
             "combine_streams": settings["combine_streams"],
             "organize": settings["organize"],
             "concurrency": settings["concurrency"],
+            "remove_if_cancelled": settings["remove_if_cancelled"],
         }
 
     def save_app_settings(self, settings: dict[str, Any]) -> dict[str, Any]:
@@ -98,6 +99,7 @@ class Api:
             "combine_streams": bool(settings.get("combine_streams", True)),
             "organize": bool(settings.get("organize", False)),
             "concurrency": concurrency,
+            "remove_if_cancelled": bool(settings.get("remove_if_cancelled", True)),
         }
         return save_settings(updates)
 

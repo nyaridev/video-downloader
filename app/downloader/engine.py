@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import yt_dlp
-from yt_dlp.utils import DownloadError
+from yt_dlp.utils import DownloadError, DownloadCancelled
 
 from app.config import load_settings, normalize_tool_source
 from app.cookies import CookieExportError, ytdlp_cookie_opts
@@ -18,6 +18,7 @@ from app.downloader.extract import extract_info
 from app.downloader.ytdlp_opts import base_ytdlp_opts
 from app.downloader.metadata import write_metadata
 from app.downloader.verify import collect_heights, expected_files_present
+from app.downloader.cleanup import cleanup_cancelled_job
 from app.ffmpeg_tool import ffmpeg_available
 
 LogFn = Callable[[str, str], None]
@@ -101,6 +102,43 @@ class DownloadEngine:
     def _cancelled(job: dict[str, Any]) -> bool:
         return bool(job.get("cancel_flag", {}).get("cancel"))
 
+    @staticmethod
+    def _remove_if_cancelled(job: dict[str, Any]) -> bool:
+        settings = job.get("cookie_settings") or load_settings()
+        return bool(settings.get("remove_if_cancelled", True))
+
+    def _cleanup_if_cancelled(self, job: dict[str, Any]) -> None:
+        if not self._cancelled(job) or not self._remove_if_cancelled(job):
+            return
+        if not job.get("download_dir") or not job.get("video_id"):
+            return
+        removed = cleanup_cancelled_job(
+            job.get("download_dir"),
+            job.get("video_id"),
+            bundle=bool(job.get("bundle")),
+        )
+        if removed or job.get("bundle"):
+            title = job.get("title") or job.get("video_id") or "download"
+            if job.get("bundle"):
+                self._log("info", f"Removed download folder for cancelled: {title}")
+            else:
+                self._log("info", f"Removed {removed} file(s) for cancelled: {title}")
+
+    def _return_cancelled(
+        self,
+        job: dict[str, Any],
+        *,
+        title: str | None = None,
+        video_id: str | None = None,
+    ) -> dict[str, Any]:
+        self._cleanup_if_cancelled(job)
+        result: dict[str, Any] = {"ok": False, "error": "Cancelled"}
+        if title:
+            result["title"] = title
+        if video_id:
+            result["id"] = video_id
+        return result
+
     def _download_one(
         self,
         url: str,
@@ -143,6 +181,9 @@ class DownloadEngine:
             playlist_title=playlist_title,
             channel_handle=channel_handle,
         )
+        job["download_dir"] = str(target_dir)
+        job["video_id"] = video_id
+        job["bundle"] = bundle
 
         if job.get("skip_existing", True) and expected_files_present(
             target_dir,
@@ -157,7 +198,7 @@ class DownloadEngine:
             return {"ok": True, "skipped": True, "title": title, "id": video_id}
 
         if self._cancelled(job):
-            return {"ok": False, "error": "Cancelled"}
+            return self._return_cancelled(job, title=title, video_id=video_id)
 
         heights = collect_heights(info)
         _, warn = pick_nearest_height(video_quality, heights)
@@ -166,20 +207,20 @@ class DownloadEngine:
 
         outtmpl = str(target_dir / f"{video_id}.%(ext)s")
         job_id = job.get("job_id")
-        hooks = self._download_hooks(job_id, combine_streams=combine_streams and want_video)
+        hooks = self._download_hooks(job, target_dir, video_id, combine_streams=combine_streams and want_video)
 
         self._log("info", f"Downloading: {title}")
 
         try:
             if want_metadata:
                 if self._cancelled(job):
-                    return {"ok": False, "error": "Cancelled"}
+                    return self._return_cancelled(job, title=title, video_id=video_id)
                 self._set_item(job_id, "metadata")
                 write_metadata(target_dir, video_id, info)
 
             if want_thumbnail:
                 if self._cancelled(job):
-                    return {"ok": False, "error": "Cancelled"}
+                    return self._return_cancelled(job, title=title, video_id=video_id)
                 self._set_item(job_id, "thumbnail")
                 self._run_download(
                     url,
@@ -195,7 +236,7 @@ class DownloadEngine:
 
             if want_audio:
                 if self._cancelled(job):
-                    return {"ok": False, "error": "Cancelled"}
+                    return self._return_cancelled(job, title=title, video_id=video_id)
                 self._set_item(job_id, "audio")
                 self._run_download(
                     url,
@@ -213,13 +254,13 @@ class DownloadEngine:
                         "outtmpl": {"default": outtmpl},
                         "writethumbnail": False,
                         "writeinfojson": False,
-                        **self._download_hooks(job_id, combine_streams=False),
+                        **self._download_hooks(job, target_dir, video_id, combine_streams=False),
                     },
                 )
 
             if want_video:
                 if self._cancelled(job):
-                    return {"ok": False, "error": "Cancelled"}
+                    return self._return_cancelled(job, title=title, video_id=video_id)
                 self._set_item(job_id, "video")
                 self._run_download(
                     url,
@@ -246,6 +287,8 @@ class DownloadEngine:
                         keep_separate_audio=want_audio,
                     )
 
+        except DownloadCancelled:
+            return self._return_cancelled(job, title=title, video_id=video_id)
         except (DownloadError, CookieExportError) as exc:
             self._log("error", str(exc))
             return {"ok": False, "error": normalize_log_message(str(exc)), "title": title, "id": video_id}
@@ -275,14 +318,27 @@ class DownloadEngine:
         self._active_item[job_id] = item
         self._progress({"job_id": job_id, "status": "downloading", "item": item})
 
-    def _download_hooks(self, job_id: str | None, *, combine_streams: bool) -> dict[str, list[Any]]:
-        opts: dict[str, list[Any]] = {"progress_hooks": [self._make_hook(job_id)]}
+    def _download_hooks(
+        self,
+        job: dict[str, Any],
+        target_dir: Path,
+        video_id: str,
+        *,
+        combine_streams: bool,
+    ) -> dict[str, list[Any]]:
+        job_id = job.get("job_id")
+        opts: dict[str, list[Any]] = {"progress_hooks": [self._make_hook(job, target_dir, video_id)]}
         if combine_streams and job_id:
-            opts["postprocessor_hooks"] = [self._make_post_hook(job_id)]
+            opts["postprocessor_hooks"] = [self._make_post_hook(job, target_dir, video_id)]
         return opts
 
-    def _make_hook(self, job_id: str | None):
+    def _make_hook(self, job: dict[str, Any], target_dir: Path, video_id: str):
+        job_id = job.get("job_id")
+
         def hook(status: dict[str, Any]) -> None:
+            if self._cancelled(job):
+                self._cleanup_if_cancelled(job)
+                raise DownloadCancelled("Cancelled")
             if status.get("status") not in ("downloading", "finished"):
                 return
             payload = {
@@ -301,8 +357,13 @@ class DownloadEngine:
 
         return hook
 
-    def _make_post_hook(self, job_id: str | None):
+    def _make_post_hook(self, job: dict[str, Any], target_dir: Path, video_id: str):
+        job_id = job.get("job_id")
+
         def hook(status: dict[str, Any]) -> None:
+            if self._cancelled(job):
+                self._cleanup_if_cancelled(job)
+                raise DownloadCancelled("Cancelled")
             pp_name = status.get("postprocessor") or ""
             if pp_name not in _MERGE_POSTPROCESSORS:
                 return

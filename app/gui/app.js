@@ -348,6 +348,7 @@ function readSettingsFromForm() {
     cookies_browser: $("cookieBrowser").value,
     cookies_file: $("cookiesFile").value,
     frameless: $("chkFrameless").checked,
+    remove_if_cancelled: $("chkRemoveIfCancelled").checked,
     want_video: $("chkVideo").checked,
     want_audio: $("chkAudio").checked,
     want_metadata: $("chkMeta").checked,
@@ -1051,6 +1052,7 @@ async function init() {
       $("cookieBrowser").disabled = !$("chkBrowserCookies").checked;
       $("cookiesFile").value = defaults.cookies_file || "";
       $("chkFrameless").checked = defaults.frameless !== false;
+      $("chkRemoveIfCancelled").checked = defaults.remove_if_cancelled !== false;
       applyFramelessUi(defaults.frameless !== false);
       applyDownloadDefaults(defaults);
       await refreshExtrasStatus().catch(() => {});
@@ -1162,6 +1164,7 @@ async function init() {
 
   $("cookieBrowser").addEventListener("change", scheduleSaveSettings);
   $("chkFrameless").addEventListener("change", scheduleSaveSettings);
+  $("chkRemoveIfCancelled").addEventListener("change", scheduleSaveSettings);
 
   $("browseBtn").addEventListener("click", async () => {
     try {

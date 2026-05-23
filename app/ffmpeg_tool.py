@@ -14,6 +14,7 @@ import zipfile
 from pathlib import Path
 
 from app.paths import FFMPEG_DIR, FFMPEG_EXE
+from app.tool_env import env_executable_path
 FFMPEG_DOWNLOAD_BASE = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest"
 
 
@@ -66,6 +67,9 @@ def _tool_status(path: Path | None) -> dict[str, str | bool]:
 
 
 def path_ffmpeg_status() -> dict[str, str | bool]:
+    custom = env_executable_path("FFMPEG")
+    if custom:
+        return _tool_status(custom)
     found = shutil.which("ffmpeg")
     return _tool_status(Path(found) if found else None)
 

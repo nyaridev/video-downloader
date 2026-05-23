@@ -142,6 +142,14 @@
               <p class="hint">Requires restart. Hides the system title bar and uses custom window buttons.</p>
             </div>
             <div class="settings-block">
+              <span class="label-inline">Downloads</span>
+              <label class="toggle-card" data-tip="When a queue item is cancelled while downloading, delete everything written for that task — metadata, thumbnail, audio, video, and partial files. With Bundle enabled, the whole task folder is removed.">
+                <span class="pill-switch"><input type="checkbox" id="chkRemoveIfCancelled" checked /><span class="pill-track"><span class="pill-knob"></span></span></span>
+                <span class="toggle-label">Remove files if cancelled</span>
+              </label>
+              <p class="hint">Removes all parts of the cancelled task. Bundled downloads delete the entire task folder.</p>
+            </div>
+            <div class="settings-block">
               <span class="label-inline">YouTube</span>
               <p class="hint">Sign in if downloads fail with a bot check.
                 <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>

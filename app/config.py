@@ -34,6 +34,7 @@ DEFAULTS: dict[str, Any] = {
     "combine_streams": True,
     "organize": False,
     "concurrency": 8,
+    "remove_if_cancelled": True,
     "deno_source": "path",
     "ffmpeg_source": "path",
 }
@@ -92,6 +93,7 @@ def load_settings() -> dict[str, Any]:
     data["bundle"] = bool(data.get("bundle", True))
     data["combine_streams"] = bool(data.get("combine_streams", True))
     data["organize"] = bool(data.get("organize", False))
+    data["remove_if_cancelled"] = bool(data.get("remove_if_cancelled", True))
     legacy = _legacy_concurrency(data)
     data["concurrency"] = legacy if legacy is not None else normalize_concurrency(data.get("concurrency", 8))
     data["deno_source"] = normalize_tool_source(data.get("deno_source"))

@@ -13,6 +13,7 @@ import zipfile
 from pathlib import Path
 
 from app.paths import DENO_DIR, DENO_EXE
+from app.tool_env import env_executable_path
 DENO_DOWNLOAD_BASE = "https://github.com/denoland/deno/releases/latest/download"
 
 
@@ -64,6 +65,9 @@ def _tool_status(path: Path | None) -> dict[str, str | bool]:
 
 
 def path_deno_status() -> dict[str, str | bool]:
+    custom = env_executable_path("DENO")
+    if custom:
+        return _tool_status(custom)
     found = shutil.which("deno")
     return _tool_status(Path(found) if found else None)
 
