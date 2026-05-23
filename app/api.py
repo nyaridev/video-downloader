@@ -8,6 +8,7 @@ from typing import Any
 
 from app.auth.browser import launch_for_youtube_signin
 from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, save_settings
+from app.utils.naming import DEFAULT_BUNDLE_FOLDER_TEMPLATE, DEFAULT_FILE_NAME_TEMPLATE, normalize_name_template
 from app.gui.dialogs import pick_file, pick_folder
 from app.paths import DEFAULT_OUTPUT, ROOT, ensure_output_root
 from app.queue import DownloadQueue
@@ -68,6 +69,8 @@ class Api:
             "organize": settings["organize"],
             "concurrency": settings["concurrency"],
             "remove_if_cancelled": settings["remove_if_cancelled"],
+            "bundle_folder_template": settings["bundle_folder_template"],
+            "file_name_template": settings["file_name_template"],
         }
 
     def save_app_settings(self, settings: dict[str, Any]) -> dict[str, Any]:
@@ -100,6 +103,14 @@ class Api:
             "organize": bool(settings.get("organize", False)),
             "concurrency": concurrency,
             "remove_if_cancelled": bool(settings.get("remove_if_cancelled", True)),
+            "bundle_folder_template": normalize_name_template(
+                settings.get("bundle_folder_template"),
+                DEFAULT_BUNDLE_FOLDER_TEMPLATE,
+            ),
+            "file_name_template": normalize_name_template(
+                settings.get("file_name_template"),
+                DEFAULT_FILE_NAME_TEMPLATE,
+            ),
         }
         return save_settings(updates)
 

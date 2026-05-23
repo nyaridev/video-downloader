@@ -150,6 +150,25 @@
               <p class="hint">Removes all parts of the cancelled task. Bundled downloads delete the entire task folder.</p>
             </div>
             <div class="settings-block">
+              <span class="label-inline">File naming</span>
+              <div class="format-field">
+                <label class="format-field-label" for="bundleFolderTemplate">Bundle folder</label>
+                <input id="bundleFolderTemplate" type="text" class="path-input format-input" spellcheck="false" />
+              </div>
+              <div class="format-field">
+                <label class="format-field-label" for="fileNameTemplate">File name</label>
+                <input id="fileNameTemplate" type="text" class="path-input format-input" spellcheck="false" />
+              </div>
+              <p class="hint format-legend">
+                Placeholders: <code>{title}</code> video title,
+                <code>{id}</code> video ID,
+                <code>{channel}</code> channel name,
+                <code>{upload_date}</code> upload date (YYYYMMDD),
+                <code>{playlist}</code> playlist title.
+                Metadata is saved as the file name plus <code>.meta.json</code>.
+              </p>
+            </div>
+            <div class="settings-block">
               <span class="label-inline">YouTube</span>
               <p class="hint">Sign in if downloads fail with a bot check.
                 <a href="https://github.com/yt-dlp/yt-dlp/issues/7271" target="_blank">Help</a>

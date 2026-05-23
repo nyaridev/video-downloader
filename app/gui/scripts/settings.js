@@ -6,6 +6,13 @@ import { DOWNLOAD_SETTING_IDS, state } from "./state.js";
 
 let saveTimer = null;
 
+export function applySettingsDefaults(defaults) {
+  $("chkFrameless").checked = defaults.frameless !== false;
+  $("chkRemoveIfCancelled").checked = defaults.remove_if_cancelled !== false;
+  $("bundleFolderTemplate").value = defaults.bundle_folder_template || "{title}_{id}";
+  $("fileNameTemplate").value = defaults.file_name_template || "{id}";
+}
+
 export function applyDownloadDefaults(defaults) {
   $("chkVideo").checked = defaults.want_video !== false;
   $("chkAudio").checked = defaults.want_audio !== false;
@@ -27,6 +34,8 @@ export function readSettingsFromForm() {
     cookies_file: $("cookiesFile").value,
     frameless: $("chkFrameless").checked,
     remove_if_cancelled: $("chkRemoveIfCancelled").checked,
+    bundle_folder_template: $("bundleFolderTemplate").value.trim(),
+    file_name_template: $("fileNameTemplate").value.trim(),
     want_video: $("chkVideo").checked,
     want_audio: $("chkAudio").checked,
     want_metadata: $("chkMeta").checked,

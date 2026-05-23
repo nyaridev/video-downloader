@@ -6,8 +6,8 @@ import shutil
 from pathlib import Path
 
 
-def _matches_task_file(path: Path, video_id: str) -> bool:
-    return path.is_file() and path.name.startswith(video_id)
+def _matches_task_file(path: Path, file_base: str) -> bool:
+    return path.is_file() and path.name.startswith(file_base)
 
 
 def _safe_unlink(path: Path) -> None:
@@ -22,10 +22,15 @@ def cleanup_cancelled_job(
     target_dir: Path | str | None,
     video_id: str | None,
     *,
+    file_base_name: str | None = None,
     bundle: bool = False,
 ) -> int:
     """Remove all files for a cancelled task. Returns number of files removed."""
-    if not target_dir or not video_id:
+    if not target_dir:
+        return 0
+
+    file_base = (file_base_name or video_id or "").strip()
+    if not file_base:
         return 0
 
     root = Path(target_dir)
@@ -45,7 +50,7 @@ def cleanup_cancelled_job(
     removed = 0
     if root.is_dir():
         for path in list(root.iterdir()):
-            if _matches_task_file(path, video_id):
+            if _matches_task_file(path, file_base):
                 _safe_unlink(path)
                 removed += 1
     return removed

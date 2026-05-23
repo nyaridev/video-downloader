@@ -9,6 +9,11 @@ from pathlib import Path
 from typing import Any
 
 from app.paths import ROOT, USER_DIR, ensure_user_layout
+from app.utils.naming import (
+    DEFAULT_BUNDLE_FOLDER_TEMPLATE,
+    DEFAULT_FILE_NAME_TEMPLATE,
+    normalize_name_template,
+)
 
 SETTINGS_FILE = USER_DIR / "settings.json"
 LEGACY_SETTINGS_FILE = ROOT / "settings.json"
@@ -35,6 +40,8 @@ DEFAULTS: dict[str, Any] = {
     "organize": False,
     "concurrency": 8,
     "remove_if_cancelled": True,
+    "bundle_folder_template": DEFAULT_BUNDLE_FOLDER_TEMPLATE,
+    "file_name_template": DEFAULT_FILE_NAME_TEMPLATE,
     "deno_source": "path",
     "ffmpeg_source": "path",
 }
@@ -94,6 +101,14 @@ def load_settings() -> dict[str, Any]:
     data["combine_streams"] = bool(data.get("combine_streams", True))
     data["organize"] = bool(data.get("organize", False))
     data["remove_if_cancelled"] = bool(data.get("remove_if_cancelled", True))
+    data["bundle_folder_template"] = normalize_name_template(
+        data.get("bundle_folder_template"),
+        DEFAULT_BUNDLE_FOLDER_TEMPLATE,
+    )
+    data["file_name_template"] = normalize_name_template(
+        data.get("file_name_template"),
+        DEFAULT_FILE_NAME_TEMPLATE,
+    )
     legacy = _legacy_concurrency(data)
     data["concurrency"] = legacy if legacy is not None else normalize_concurrency(data.get("concurrency", 8))
     data["deno_source"] = normalize_tool_source(data.get("deno_source"))

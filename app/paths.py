@@ -77,14 +77,15 @@ def resolve_download_dir(
     mode: str,
     organize: bool,
     bundle: bool,
-    video_id: str,
-    title: str,
+    bundle_folder_template: str,
+    naming_context: dict[str, str],
     playlist_title: str | None,
     channel_handle: str | None,
 ) -> Path:
     """Compute the directory where files for one video should land."""
-    safe_title = sanitize_name(title)
-    folder_name = f"{safe_title}_{video_id}" if bundle else ""
+    from app.utils.naming import render_name_template
+
+    folder_name = render_name_template(bundle_folder_template, naming_context) if bundle else ""
 
     if not organize:
         base = output_root

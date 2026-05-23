@@ -64,8 +64,8 @@ def build_essential_metadata(info: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def write_metadata(target_dir: Path, video_id: str, info: dict[str, Any]) -> Path:
-    path = target_dir / f"{video_id}{META_FILENAME}"
+def write_metadata(target_dir: Path, file_base: str, info: dict[str, Any]) -> Path:
+    path = target_dir / f"{file_base}{META_FILENAME}"
     payload = build_essential_metadata(info)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return path

@@ -13,6 +13,7 @@ from app.config import load_settings, normalize_tool_source
 from app.auth.cookies import CookieExportError, ytdlp_cookie_opts
 from app.utils.text import normalize_log_message, strip_ansi
 from app.utils.formats import build_format_string, pick_nearest_height
+from app.utils.naming import build_naming_context, render_name_template
 from app.paths import resolve_download_dir
 from app.downloader.extract import extract_info
 from app.downloader.ytdlp_opts import base_ytdlp_opts
@@ -28,11 +29,11 @@ ProgressFn = Callable[[dict[str, Any]], None]
 _MERGE_POSTPROCESSORS = frozenset({"FFmpegMerger", "Merger", "VideoRemuxer"})
 
 
-def _cleanup_merge_leftovers(target_dir: Path, video_id: str, *, keep_separate_audio: bool) -> None:
+def _cleanup_merge_leftovers(target_dir: Path, file_base: str, *, keep_separate_audio: bool) -> None:
     """Remove intermediate .webm / partial files after merge into a single video."""
     has_merged = any(
         p.is_file()
-        and p.name.startswith(video_id)
+        and p.name.startswith(file_base)
         and p.suffix.lower() in (".mp4", ".mkv", ".mov")
         and p.stat().st_size > 0
         for p in target_dir.iterdir()
@@ -44,7 +45,7 @@ def _cleanup_merge_leftovers(target_dir: Path, video_id: str, *, keep_separate_a
     if keep_separate_audio:
         keep_suffixes |= audio_suffixes
     for path in target_dir.iterdir():
-        if not path.is_file() or not path.name.startswith(video_id):
+        if not path.is_file() or not path.name.startswith(file_base):
             continue
         if path.suffix.lower() in keep_suffixes or path.name.endswith(".meta.json"):
             continue
@@ -115,6 +116,7 @@ class DownloadEngine:
         removed = cleanup_cancelled_job(
             job.get("download_dir"),
             job.get("video_id"),
+            file_base_name=job.get("file_base_name"),
             bundle=bool(job.get("bundle")),
         )
         if removed or job.get("bundle"):
@@ -166,6 +168,14 @@ class DownloadEngine:
         video_id = info.get("id") or "unknown"
         title = info.get("title") or video_id
         job["title"] = title
+        settings = job.get("cookie_settings") or load_settings()
+        naming_context = build_naming_context(
+            info=info,
+            playlist_title=playlist_title,
+            channel_handle=channel_handle,
+        )
+        file_base_name = render_name_template(settings.get("file_name_template", "{id}"), naming_context)
+        job["file_base_name"] = file_base_name
         output_root = Path(job["output_dir"])
         organize = job.get("organize", False)
         bundle = job.get("bundle", False)
@@ -176,8 +186,8 @@ class DownloadEngine:
             mode=mode,
             organize=organize,
             bundle=bundle,
-            video_id=video_id,
-            title=title,
+            bundle_folder_template=settings.get("bundle_folder_template", "{title}_{id}"),
+            naming_context=naming_context,
             playlist_title=playlist_title,
             channel_handle=channel_handle,
         )
@@ -187,7 +197,7 @@ class DownloadEngine:
 
         if job.get("skip_existing", True) and expected_files_present(
             target_dir,
-            video_id,
+            file_base_name,
             want_video=want_video,
             want_audio=want_audio,
             want_metadata=want_metadata,
@@ -205,9 +215,9 @@ class DownloadEngine:
         if warn:
             self._log("warn", warn)
 
-        outtmpl = str(target_dir / f"{video_id}.%(ext)s")
+        outtmpl = str(target_dir / f"{file_base_name}.%(ext)s")
         job_id = job.get("job_id")
-        hooks = self._download_hooks(job, target_dir, video_id, combine_streams=combine_streams and want_video)
+        hooks = self._download_hooks(job, target_dir, file_base_name, combine_streams=combine_streams and want_video)
 
         self._log("info", f"Downloading: {title}")
 
@@ -216,7 +226,7 @@ class DownloadEngine:
                 if self._cancelled(job):
                     return self._return_cancelled(job, title=title, video_id=video_id)
                 self._set_item(job_id, "metadata")
-                write_metadata(target_dir, video_id, info)
+                write_metadata(target_dir, file_base_name, info)
 
             if want_thumbnail:
                 if self._cancelled(job):
@@ -254,7 +264,7 @@ class DownloadEngine:
                         "outtmpl": {"default": outtmpl},
                         "writethumbnail": False,
                         "writeinfojson": False,
-                        **self._download_hooks(job, target_dir, video_id, combine_streams=False),
+                        **self._download_hooks(job, target_dir, file_base_name, combine_streams=False),
                     },
                 )
 
@@ -283,7 +293,7 @@ class DownloadEngine:
                 if combine_streams:
                     _cleanup_merge_leftovers(
                         target_dir,
-                        video_id,
+                        file_base_name,
                         keep_separate_audio=want_audio,
                     )
 
@@ -322,17 +332,17 @@ class DownloadEngine:
         self,
         job: dict[str, Any],
         target_dir: Path,
-        video_id: str,
+        file_base: str,
         *,
         combine_streams: bool,
     ) -> dict[str, list[Any]]:
         job_id = job.get("job_id")
-        opts: dict[str, list[Any]] = {"progress_hooks": [self._make_hook(job, target_dir, video_id)]}
+        opts: dict[str, list[Any]] = {"progress_hooks": [self._make_hook(job, target_dir, file_base)]}
         if combine_streams and job_id:
-            opts["postprocessor_hooks"] = [self._make_post_hook(job, target_dir, video_id)]
+            opts["postprocessor_hooks"] = [self._make_post_hook(job, target_dir, file_base)]
         return opts
 
-    def _make_hook(self, job: dict[str, Any], target_dir: Path, video_id: str):
+    def _make_hook(self, job: dict[str, Any], target_dir: Path, file_base: str):
         job_id = job.get("job_id")
 
         def hook(status: dict[str, Any]) -> None:
@@ -357,7 +367,7 @@ class DownloadEngine:
 
         return hook
 
-    def _make_post_hook(self, job: dict[str, Any], target_dir: Path, video_id: str):
+    def _make_post_hook(self, job: dict[str, Any], target_dir: Path, file_base: str):
         job_id = job.get("job_id")
 
         def hook(status: dict[str, Any]) -> None:

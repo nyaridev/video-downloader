@@ -387,3 +387,24 @@
 .hint a {
   color: var(--accent);
 }
+
+.format-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.format-field-label {
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.format-input {
+  width: 100%;
+}
+
+.format-legend code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--text);
+}

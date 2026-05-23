@@ -14,6 +14,7 @@ import {
 } from "./queue.js";
 import {
   applyDownloadDefaults,
+  applySettingsDefaults,
   bindDownloadSettingsAutosave,
   readConfig,
   saveAppSettings,
@@ -58,8 +59,7 @@ function init() {
       $("chkBrowserCookies").checked = defaults.use_browser_cookies !== false;
       $("cookieBrowser").disabled = !$("chkBrowserCookies").checked;
       $("cookiesFile").value = defaults.cookies_file || "";
-      $("chkFrameless").checked = defaults.frameless !== false;
-      $("chkRemoveIfCancelled").checked = defaults.remove_if_cancelled !== false;
+      applySettingsDefaults(defaults);
       applyFramelessUi(defaults.frameless !== false);
       applyDownloadDefaults(defaults);
       await refreshExtrasStatus().catch(() => {});
@@ -172,6 +172,8 @@ function init() {
   $("cookieBrowser").addEventListener("change", scheduleSaveSettings);
   $("chkFrameless").addEventListener("change", scheduleSaveSettings);
   $("chkRemoveIfCancelled").addEventListener("change", scheduleSaveSettings);
+  $("bundleFolderTemplate").addEventListener("input", scheduleSaveSettings);
+  $("fileNameTemplate").addEventListener("input", scheduleSaveSettings);
 
   $("browseBtn").addEventListener("click", async () => {
     try {
