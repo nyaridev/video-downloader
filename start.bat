@@ -2,13 +2,6 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-if /i not "%HIDE_CONSOLE%"=="" if /i not "%HIDE_CONSOLE%"=="0" if /i not "%HIDE_CONSOLE%"=="false" (
-    if not defined _VD_CONSOLE_HIDDEN (
-        powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','set _VD_CONSOLE_HIDDEN=1& call \"\"\"%~f0\"\"\"' -WindowStyle Hidden -WorkingDirectory '!CD!'"
-        exit /b 0
-    )
-)
-
 where python >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Python was not found. Install Python 3.10+ from https://www.python.org/downloads/
