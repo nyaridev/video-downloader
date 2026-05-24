@@ -39,6 +39,9 @@ if "%USE_UV%"=="1" (
         if errorlevel 1 goto :fail
     )
     set "PY=.venv\Scripts\python.exe"
+)
+
+if "%USE_UV%"=="0" (
     echo Installing locked dependencies with pip...
     "%PY%" -m pip install --upgrade pip -q
     "%PY%" -m pip install -r requirements.txt
