@@ -1,10 +1,28 @@
 html[data-theme="anime"],
 html[data-theme="anime"] body {
-  background: transparent;
+  background: #000;
+}
+
+html[data-theme="anime"][data-color-scheme="dark"],
+html[data-theme="anime"][data-color-scheme="dark"] body {
+  background: #000;
+}
+
+html[data-theme="anime"][data-color-scheme="light"],
+html[data-theme="anime"][data-color-scheme="light"] body {
+  background: #fff;
 }
 
 html[data-theme="anime"] body.frameless {
-  background: transparent;
+  background: #000;
+}
+
+html[data-theme="anime"][data-color-scheme="dark"] body.frameless {
+  background: #000;
+}
+
+html[data-theme="anime"][data-color-scheme="light"] body.frameless {
+  background: #fff;
 }
 
 html[data-theme="anime"] body.frameless .app {
@@ -22,38 +40,117 @@ html[data-theme="anime"] .app-body {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  background: #000;
+}
+
+html[data-theme="anime"][data-color-scheme="dark"] .anime-background {
+  background: #000;
+}
+
+html[data-theme="anime"][data-color-scheme="light"] .anime-background {
+  background: #fff;
+}
+
+.anime-background__base {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #000;
+}
+
+html[data-theme="anime"][data-color-scheme="light"] .anime-background__base {
+  background: #fff;
+}
+
+.anime-background__dim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: #000;
+  opacity: var(--anime-bg-dim, 0);
+  transition: opacity 3.2s ease-in-out;
+}
+
+.anime-background--loading .anime-background__dim,
+.anime-background--loading .anime-background__scrim,
+.anime-background--loading .anime-background__layer {
+  transition: none !important;
 }
 
 .anime-background__scrim {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(244, 114, 182, 0.1), transparent 55%),
-    linear-gradient(180deg, rgba(8, 6, 16, 0.28) 0%, rgba(8, 6, 16, 0.48) 100%);
+    radial-gradient(ellipse 90% 70% at 50% -10%, rgba(244, 114, 182, var(--anime-scrim-tint-a)), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(56, 189, 248, var(--anime-scrim-tint-b)), transparent 45%),
+    linear-gradient(180deg, rgba(0, 0, 0, var(--anime-scrim-top)) 0%, rgba(0, 0, 0, var(--anime-scrim-bottom)) 100%);
+  transition: background 3.5s ease-in-out;
+}
+
+html[data-theme="anime"][data-color-scheme="dark"] .anime-background__scrim {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% -10%, rgba(192, 132, 252, var(--anime-scrim-tint-a)), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(34, 211, 238, var(--anime-scrim-tint-b)), transparent 45%),
+    linear-gradient(180deg, rgba(0, 0, 0, var(--anime-scrim-top)) 0%, rgba(0, 0, 0, var(--anime-scrim-bottom)) 100%);
+}
+
+.anime-background__media {
+  position: absolute;
+  inset: -2%;
+  z-index: 1;
+  overflow: hidden;
+  background: #000;
+  filter: blur(5px);
+  transition: filter 0.5s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  will-change: filter;
+}
+
+html[data-theme="anime"][data-color-scheme="light"] .anime-background__media {
+  background: #fff;
+}
+
+html[data-theme="anime"].app-inactive .anime-background__media {
+  filter: blur(2px);
 }
 
 .anime-background__layer {
   position: absolute;
-  inset: -2%;
-  z-index: 1;
-  width: calc(100% + 4%);
-  height: calc(100% + 4%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center;
+  background: #000;
   opacity: 0;
   transform: scale(1.03);
   transition: opacity 3.5s ease-in-out;
   will-change: opacity;
 }
 
+html[data-theme="anime"][data-color-scheme="light"] .anime-background__layer {
+  background: #fff;
+}
+
 .anime-background__layer.is-visible {
   opacity: 1;
+}
+
+.anime-background__layer.is-visible.is-instant {
+  transition: none;
 }
 
 html[data-theme="anime"] .app {
   position: relative;
   z-index: 1;
+  opacity: 1;
+  transition: opacity 0.5s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  will-change: opacity;
+}
+
+html[data-theme="anime"].app-inactive .app {
+  opacity: 0.25;
 }
 
 html[data-theme="anime"] .anime-background {

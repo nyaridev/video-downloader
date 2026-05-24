@@ -71,12 +71,14 @@
 }
 
 .custom-select.open .custom-select-trigger {
-  border-color: var(--accent);
+  border-color: var(--input-focus-ring);
+  box-shadow: 0 0 0 1px var(--input-focus-ring);
 }
 
 .custom-select-trigger:focus-visible {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--input-focus-ring);
+  box-shadow: 0 0 0 1px var(--input-focus-ring);
 }
 
 .custom-select-label {
@@ -130,6 +132,12 @@
 
 .custom-select-menu[hidden] {
   display: none;
+}
+
+.custom-select-menu--portal {
+  position: fixed;
+  z-index: 10000;
+  right: auto;
 }
 
 .custom-select-option {

@@ -1,8 +1,10 @@
 const OPEN_CLASS = "open";
 const DROP_UP_CLASS = "custom-select--drop-up";
+const PORTAL_CLASS = "custom-select-menu--portal";
 const MENU_GAP = 4;
 const MENU_MAX_HEIGHT = 220;
 let openPicker = null;
+let portalListenersBound = false;
 
 function getPlacementBounds(trigger) {
   let node = trigger.parentElement;
@@ -39,18 +41,109 @@ function shouldDropUp(trigger, menu) {
 
 function updateMenuPlacement(wrap) {
   const trigger = wrap.querySelector(".custom-select-trigger");
-  const menu = wrap.querySelector(".custom-select-menu");
+  const menu = getMenu(wrap);
   if (!trigger || !menu) return;
 
   wrap.classList.toggle(DROP_UP_CLASS, shouldDropUp(trigger, menu));
 }
 
+function getMenu(wrap) {
+  if (wrap._portaledMenu) return wrap._portaledMenu;
+  const local = wrap.querySelector(".custom-select-menu");
+  if (local) return local;
+  const trigger = wrap.querySelector(".custom-select-trigger");
+  const menuId = trigger?.getAttribute("aria-controls");
+  if (!menuId) return null;
+  const byId = document.getElementById(menuId);
+  return byId?.classList.contains("custom-select-menu") ? byId : null;
+}
+
+function ensureMenuHome(wrap) {
+  const menu = getMenu(wrap);
+  if (!menu) return null;
+  if (wrap._portaledMenu || menu.classList.contains(PORTAL_CLASS)) {
+    unportalMenu(wrap);
+    return wrap.querySelector(".custom-select-menu");
+  }
+  return menu;
+}
+
+function bindPortalListeners() {
+  if (portalListenersBound) return;
+  portalListenersBound = true;
+  window.addEventListener("scroll", repositionOpenPicker, true);
+  window.addEventListener("resize", repositionOpenPicker);
+}
+
+function repositionOpenPicker() {
+  if (!openPicker) return;
+  const trigger = openPicker.querySelector(".custom-select-trigger");
+  const menu = getMenu(openPicker);
+  if (trigger && menu && !menu.hidden) {
+    syncPortalPosition(openPicker, trigger, menu);
+  }
+}
+
+function syncPortalPosition(wrap, trigger, menu) {
+  const rect = trigger.getBoundingClientRect();
+  const dropUp = wrap.classList.contains(DROP_UP_CLASS);
+  const bounds = getPlacementBounds(trigger);
+
+  menu.style.position = "fixed";
+  menu.style.left = `${rect.left}px`;
+  menu.style.width = `${rect.width}px`;
+  menu.style.minWidth = `${rect.width}px`;
+  menu.style.zIndex = "10000";
+
+  if (dropUp) {
+    const spaceAbove = rect.top - bounds.top - MENU_GAP;
+    menu.style.top = "auto";
+    menu.style.bottom = `${window.innerHeight - rect.top + MENU_GAP}px`;
+    menu.style.maxHeight = `${Math.max(80, Math.min(MENU_MAX_HEIGHT, spaceAbove))}px`;
+  } else {
+    const spaceBelow = bounds.bottom - rect.bottom - MENU_GAP;
+    menu.style.top = `${rect.bottom + MENU_GAP}px`;
+    menu.style.bottom = "auto";
+    menu.style.maxHeight = `${Math.max(80, Math.min(MENU_MAX_HEIGHT, spaceBelow))}px`;
+  }
+}
+
+function portalMenu(wrap, trigger, menu) {
+  if (!wrap._menuAnchor) {
+    wrap._menuAnchor = document.createComment("custom-select-menu-anchor");
+    menu.after(wrap._menuAnchor);
+  }
+  document.body.appendChild(menu);
+  wrap._portaledMenu = menu;
+  menu.classList.add(PORTAL_CLASS);
+  syncPortalPosition(wrap, trigger, menu);
+  bindPortalListeners();
+}
+
+function unportalMenu(wrap) {
+  let menu = wrap._portaledMenu || getMenu(wrap);
+  if (!menu || menu.parentElement === wrap) {
+    wrap._portaledMenu = null;
+    return;
+  }
+
+  menu.classList.remove(PORTAL_CLASS);
+  menu.style.cssText = "";
+  if (wrap._menuAnchor?.parentNode) {
+    wrap._menuAnchor.parentNode.insertBefore(menu, wrap._menuAnchor);
+  } else {
+    wrap.appendChild(menu);
+  }
+  wrap._portaledMenu = null;
+}
+
 function closePicker(wrap) {
   if (!wrap) return;
+  const menu = getMenu(wrap);
+  unportalMenu(wrap);
   wrap.classList.remove(OPEN_CLASS);
-  const menu = wrap.querySelector(".custom-select-menu");
-  const trigger = wrap.querySelector(".custom-select-trigger");
   if (menu) menu.hidden = true;
+  const trigger = wrap.querySelector(".custom-select-trigger");
   if (trigger) trigger.setAttribute("aria-expanded", "false");
   if (openPicker === wrap) openPicker = null;
 }
@@ -72,15 +165,18 @@ export function toggleCustomSelect(wrap) {
 function openPickerMenu(wrap) {
   const select = wrap.querySelector("select");
   const trigger = wrap.querySelector(".custom-select-trigger");
-  const menu = wrap.querySelector(".custom-select-menu");
-  if (!trigger || !menu) return;
+  if (!trigger) return;
   if (select?.disabled) return;
 
   if (openPicker && openPicker !== wrap) closePicker(openPicker);
 
+  const menu = ensureMenuHome(wrap);
+  if (!menu) return;
+
   menu.hidden = false;
   menu.style.visibility = "hidden";
   updateMenuPlacement(wrap);
+  portalMenu(wrap, trigger, menu);
   menu.style.visibility = "";
   wrap.classList.add(OPEN_CLASS);
   trigger.setAttribute("aria-expanded", "true");
@@ -106,7 +202,7 @@ function syncDisabled(wrap) {
 
 function buildMenu(wrap) {
   const select = wrap.querySelector("select");
-  const menu = wrap.querySelector(".custom-select-menu");
+  const menu = getMenu(wrap);
   if (!select || !menu || wrap.dataset.queueViewPicker) return;
 
   menu.innerHTML = "";
@@ -225,5 +321,7 @@ document.addEventListener("keydown", (e) => {
 
 document.addEventListener("click", (e) => {
   if (!openPicker) return;
-  if (!openPicker.contains(e.target)) closeAllCustomSelects();
+  const menu = getMenu(openPicker);
+  if (openPicker.contains(e.target) || menu?.contains(e.target)) return;
+  closeAllCustomSelects();
 });

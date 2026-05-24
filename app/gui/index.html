@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-color-scheme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -195,8 +195,15 @@
                 <select id="themeSelect" class="select-compact theme-select" data-i18n-aria="settings.theme" aria-label="Theme">
                   <option value="default">Default</option>
                   <option value="meta">Meta</option>
-                  <option value="amethyst">Amethyst</option>
                   <option value="anime">Anime</option>
+                </select>
+              </div>
+              <div class="row theme-row">
+                <span class="label-inline" data-i18n="settings.themeMode">Theme mode</span>
+                <select id="themeModeSelect" class="select-compact theme-select" data-i18n-aria="settings.themeMode" aria-label="Theme mode">
+                  <option value="system">System default</option>
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
                 </select>
               </div>
               <p class="hint" data-i18n="settings.appearanceHint">Applies immediately. Saved with your other settings.</p>

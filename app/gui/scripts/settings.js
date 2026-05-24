@@ -5,7 +5,14 @@ import { $ } from "./dom.js";
 import { getConcurrency, setConcurrency } from "./format.js";
 import { log } from "./logger.js";
 import { DOWNLOAD_SETTING_IDS, state } from "./state.js";
-import { applyTheme, readThemeFromForm, setThemeSelectValue } from "./theme.js";
+import {
+  applyTheme,
+  bindThemeModeListener,
+  readThemeFromForm,
+  readThemeModeFromForm,
+  setThemeModeSelectValue,
+  setThemeSelectValue,
+} from "./theme.js";
 import { initLanguage, readLanguageFromForm, t } from "./i18n.js";
 
 let saveTimer = null;
@@ -47,7 +54,9 @@ function readSaveLayout() {
 export function applySettingsDefaults(defaults) {
   initLanguage(defaults.language || "en");
   setThemeSelectValue(defaults.theme);
-  applyTheme(defaults.theme);
+  setThemeModeSelectValue(defaults.theme_mode);
+  bindThemeModeListener();
+  applyTheme(defaults.theme, defaults.theme_mode);
   $("chkFrameless").checked = defaults.frameless !== false;
   $("chkRemoveIfCancelled").checked = defaults.remove_if_cancelled !== false;
   $("bundleFolderTemplate").value = defaults.bundle_folder_template || "{title}_{id}";
@@ -82,6 +91,7 @@ export function readSettingsFromForm() {
     cookies_browser: $("cookieBrowser").value,
     cookies_file: normalizeOutputPath($("cookiesFile").value),
     theme: readThemeFromForm(),
+    theme_mode: readThemeModeFromForm(),
     language: readLanguageFromForm(),
     frameless: $("chkFrameless").checked,
     remove_if_cancelled: $("chkRemoveIfCancelled").checked,

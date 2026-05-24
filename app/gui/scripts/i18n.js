@@ -240,6 +240,7 @@ export function applyTranslations() {
   document.title = "Nari's Video Downloader";
   updateLanguageSelectLabels();
   updateThemeSelectLabels();
+  updateThemeModeSelectLabels();
   refreshQualitySelectLabels();
   window.dispatchEvent(new CustomEvent("languagechange"));
 }
@@ -260,8 +261,21 @@ function updateThemeSelectLabels() {
   const labels = {
     default: t("settings.themeDefault"),
     meta: t("settings.themeMeta"),
-    amethyst: t("settings.themeAmethyst"),
     anime: t("settings.themeAnime"),
+  };
+  select.querySelectorAll("option").forEach((option) => {
+    if (labels[option.value]) option.textContent = labels[option.value];
+  });
+  syncCustomSelect(select);
+}
+
+function updateThemeModeSelectLabels() {
+  const select = $("themeModeSelect");
+  if (!select) return;
+  const labels = {
+    system: t("settings.themeModeSystem"),
+    dark: t("settings.themeModeDark"),
+    light: t("settings.themeModeLight"),
   };
   select.querySelectorAll("option").forEach((option) => {
     if (labels[option.value]) option.textContent = labels[option.value];

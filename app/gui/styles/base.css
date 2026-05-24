@@ -40,6 +40,11 @@ body {
   font-size: 13px;
 }
 
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-color);
+}
+
 body.frameless {
   background: var(--frame-outline);
 }

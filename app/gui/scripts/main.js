@@ -27,10 +27,11 @@ import {
   syncBrowserCookiesControls,
 } from "./settings.js";
 import { MAIN_VIEW_ID, state } from "./state.js";
-import { applyTheme } from "./theme.js";
+import { applyTheme, applyThemeMode, bindThemeModeListener } from "./theme.js";
 import { qualityLabel, setLanguage, t } from "./i18n.js";
 import { initCustomSelects, syncCustomSelect } from "./custom-select.js";
 import { initNumberInputs } from "./number-input.js";
+import { bindAppFocusDim } from "./app-focus-dim.js";
 import { applyFramelessUi, bindHoverTips, setMode, setPage } from "./ui.js";
 
 window.dispatchBackend = function (payload) {
@@ -51,6 +52,7 @@ function init() {
   });
 
   bindDownloadSettingsAutosave();
+  bindAppFocusDim();
   bindHoverTips();
   initNumberInputs();
   initCustomSelects();
@@ -184,8 +186,13 @@ function init() {
   });
 
   $("cookieBrowser").addEventListener("change", scheduleSaveSettings);
+  bindThemeModeListener();
   $("themeSelect").addEventListener("change", () => {
     applyTheme($("themeSelect").value);
+    scheduleSaveSettings();
+  });
+  $("themeModeSelect")?.addEventListener("change", () => {
+    applyThemeMode($("themeModeSelect").value, $("themeSelect").value, { animate: true });
     scheduleSaveSettings();
   });
   $("languageSelect")?.addEventListener("change", () => {

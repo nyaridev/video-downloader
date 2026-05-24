@@ -7,7 +7,16 @@ import threading
 from typing import Any
 
 from app.auth.browser import launch_for_youtube_signin
-from app.config import BROWSER_OPTIONS, load_settings, normalize_concurrency, normalize_language, normalize_save_layout, normalize_theme, save_settings
+from app.config import (
+    BROWSER_OPTIONS,
+    load_settings,
+    normalize_concurrency,
+    normalize_language,
+    normalize_save_layout,
+    normalize_theme,
+    normalize_theme_mode,
+    save_settings,
+)
 from app.utils.naming import (
     DEFAULT_BUNDLE_FOLDER_TEMPLATE,
     DEFAULT_CHANNEL_NAME_TEMPLATE,
@@ -66,6 +75,7 @@ class Api:
             "cookies_file": settings["cookies_file"],
             "frameless": settings["frameless"],
             "theme": settings["theme"],
+            "theme_mode": settings["theme_mode"],
             "language": settings["language"],
             "want_video": settings["want_video"],
             "want_audio": settings["want_audio"],
@@ -106,6 +116,9 @@ class Api:
             "cookies_file": (settings.get("cookies_file") or "").strip(),
             "frameless": bool(settings.get("frameless", True)),
             "theme": normalize_theme(settings.get("theme", current.get("theme", "default"))),
+            "theme_mode": normalize_theme_mode(
+                settings.get("theme_mode", current.get("theme_mode", "system"))
+            ),
             "language": normalize_language(settings.get("language", current.get("language", "en"))),
             "want_video": bool(settings.get("want_video", True)),
             "want_audio": bool(settings.get("want_audio", True)),
@@ -192,8 +205,11 @@ class Api:
         if _webview_window:
             _webview_window.destroy()
 
-    def get_anime_background(self) -> dict[str, Any]:
-        return fetch_random_background_image()
+    def get_anime_background(self, color_scheme: str = "dark") -> dict[str, Any]:
+        scheme = str(color_scheme or "dark").strip().lower()
+        if scheme not in ("dark", "light"):
+            scheme = "dark"
+        return fetch_random_background_image(scheme)
 
     def browse_cookies_file(self) -> str:
         path = pick_file(

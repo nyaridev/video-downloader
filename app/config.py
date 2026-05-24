@@ -30,7 +30,8 @@ LEGACY_SETTINGS_FILE = ROOT / "settings.json"
 
 BROWSER_OPTIONS = ("edge", "firefox", "chrome", "brave", "chromium", "opera", "vivaldi")
 CHROMIUM_BROWSERS = frozenset({"chrome", "edge", "brave", "chromium", "opera", "vivaldi"})
-THEME_OPTIONS = ("default", "meta", "amethyst", "anime")
+THEME_OPTIONS = ("default", "meta", "anime")
+THEME_MODE_OPTIONS = ("system", "dark", "light")
 LANGUAGE_OPTIONS = ("en", "pl", "szl", "cs", "ja", "ko", "zh")
 
 _DEFAULT_BROWSER = "edge" if sys.platform == "win32" else "firefox"
@@ -41,6 +42,7 @@ DEFAULTS: dict[str, Any] = {
     "cookies_file": "",
     "frameless": True,
     "theme": "default",
+    "theme_mode": "system",
     "language": "en",
     "want_video": True,
     "want_audio": True,
@@ -85,7 +87,14 @@ def normalize_save_layout(value: Any, *, organize: bool | None = None) -> str:
 
 def normalize_theme(value: Any) -> str:
     theme = str(value or "default").strip().lower()
+    if theme == "amethyst":
+        theme = "default"
     return theme if theme in THEME_OPTIONS else "default"
+
+
+def normalize_theme_mode(value: Any) -> str:
+    mode = str(value or "system").strip().lower()
+    return mode if mode in THEME_MODE_OPTIONS else "system"
 
 
 def normalize_language(value: Any) -> str:
@@ -202,6 +211,7 @@ def load_settings() -> dict[str, Any]:
         data["cookies_browser"] = _DEFAULT_BROWSER
     data["frameless"] = bool(data.get("frameless", True))
     data["theme"] = normalize_theme(data.get("theme"))
+    data["theme_mode"] = normalize_theme_mode(data.get("theme_mode"))
     if "language" not in loaded:
         data["language"] = detect_system_language()
     else:

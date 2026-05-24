@@ -1,3 +1,4 @@
-@import "variables.css";
+@import "variables-dark.css";
+@import "variables-light.css";
 @import "background.css";
 @import "overrides.css";

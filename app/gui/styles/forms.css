@@ -75,11 +75,17 @@
   background: var(--input-bg);
   color: var(--text);
   font-size: 0.95rem;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease;
 }
 
-.url-input:focus {
-  outline: 1px solid var(--accent);
-  outline-offset: 0;
+.url-input:focus,
+.path-input:focus,
+.format-input:focus {
+  outline: none;
+  border-color: var(--input-focus-ring);
+  box-shadow: 0 0 0 1px var(--input-focus-ring);
 }
 
 .mode-row {
@@ -244,7 +250,9 @@
 .pill-switch {
   position: relative;
   display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .pill-switch input {
@@ -266,7 +274,12 @@
   border-radius: 10px;
   background: var(--mode-idle);
   position: relative;
-  transition: background 0.15s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 0 1px transparent;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .pill-knob {
@@ -282,6 +295,7 @@
 
 .pill-switch input:checked + .pill-track {
   background: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--border-hover);
 }
 
 .pill-switch input:checked + .pill-track .pill-knob {
@@ -312,7 +326,8 @@
 }
 
 .pill-switch input:focus-visible + .pill-track {
-  box-shadow: 0 0 0 1px var(--accent);
+  outline: 1px solid var(--input-focus-ring);
+  outline-offset: 2px;
 }
 
 .option-group {
@@ -366,7 +381,8 @@
 }
 
 .number-input:focus-within {
-  border-color: var(--accent);
+  border-color: var(--input-focus-ring);
+  box-shadow: 0 0 0 1px var(--input-focus-ring);
 }
 
 .number-input-field {
@@ -588,6 +604,9 @@
   background: var(--input-bg);
   color: var(--text);
   font-size: 0.85rem;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease;
 }
 
 #outputDir,
@@ -663,6 +682,9 @@
 
 .format-input {
   width: 100%;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease;
 }
 
 .format-legend code {

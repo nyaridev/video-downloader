@@ -1,0 +1,27 @@
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 3.5s;
+  animation-timing-function: ease-in-out;
+}
+
+.color-scheme-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0;
+  background: #000;
+  transition: opacity 1.75s ease-in-out;
+}
+
+.color-scheme-overlay.is-active {
+  opacity: 0.22;
+}
+
+html[data-color-scheme="light"] .color-scheme-overlay {
+  background: #fff;
+}
+
+html[data-color-scheme="light"] .color-scheme-overlay.is-active {
+  opacity: 0.28;
+}

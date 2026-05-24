@@ -1,1 +1,8 @@
-export { startAnimeTheme, stopAnimeTheme } from "./background.js";
+export {
+  startAnimeTheme,
+  stopAnimeTheme,
+  refreshAnimeBackground,
+  transitionAnimeColorScheme,
+  resyncAnimeContrastFromDom,
+} from "./background.js";
+export { seedAnimeLightGlass } from "./contrast.js";
