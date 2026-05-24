@@ -17,10 +17,25 @@
 
 /* ── Bevel utility classes via custom properties ── */
 [data-theme="win95"] {
+  --radius: 0px;
   --win95-outset: inset -1px -1px var(--win95-shadow), inset 1px 1px var(--win95-highlight);
   --win95-inset: inset 1px 1px var(--win95-shadow), inset -1px -1px var(--win95-highlight);
   --win95-outset-border: var(--win95-highlight) var(--win95-shadow) var(--win95-shadow) var(--win95-highlight);
   --win95-inset-border: var(--win95-shadow) var(--win95-highlight) var(--win95-highlight) var(--win95-shadow);
+}
+
+/* Zero radius everywhere — overrides hardcoded values in base styles */
+[data-theme="win95"],
+[data-theme="win95"] *,
+[data-theme="win95"] *::before,
+[data-theme="win95"] *::after {
+  border-radius: 0 !important;
+}
+
+html[data-theme="win95"],
+html[data-theme="win95"] body,
+html[data-theme="win95"] .app {
+  overflow: hidden;
 }
 
 /* ── Flat chrome: no radius, no modern shadows ── */
@@ -493,24 +508,33 @@ html[data-theme="win95"][data-color-scheme="dark"] .tooltip-bubble {
 }
 
 /* ── Scrollbars — Win95 style ── */
+[data-theme="win95"] {
+  scrollbar-width: auto;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
 [data-theme="win95"] ::-webkit-scrollbar {
   width: 16px;
   height: 16px;
+  border-radius: 0;
 }
 
 [data-theme="win95"] ::-webkit-scrollbar-track {
   background: var(--win95-face);
   border: 1px solid var(--win95-shadow);
+  border-radius: 0;
 }
 
 [data-theme="win95"] ::-webkit-scrollbar-thumb {
   background: var(--win95-face);
   border: 2px solid;
   border-color: var(--win95-outset-border);
+  border-radius: 0;
 }
 
 [data-theme="win95"] ::-webkit-scrollbar-thumb:hover {
   background: var(--elevated);
+  border-radius: 0;
 }
 
 [data-theme="win95"] ::-webkit-scrollbar-button {
@@ -519,10 +543,12 @@ html[data-theme="win95"][data-color-scheme="dark"] .tooltip-bubble {
   border-color: var(--win95-outset-border);
   height: 16px;
   width: 16px;
+  border-radius: 0;
 }
 
 [data-theme="win95"] ::-webkit-scrollbar-corner {
   background: var(--win95-face);
+  border-radius: 0;
 }
 
 /* ── Toggle cards ── */

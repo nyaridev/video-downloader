@@ -51,9 +51,7 @@ class DownloadQueue:
     def active_view(self) -> str:
         return self._active_view
 
-    def _emit_queue(self, *, active_view: str | None = None) -> None:
-        if active_view is not None:
-            self._active_view = active_view
+    def _emit_queue(self) -> None:
         self._revision += 1
         self._emit("queue", self.queue_state())
 
@@ -61,7 +59,6 @@ class DownloadQueue:
         return {
             "jobs": self.list_jobs(),
             "views": self.list_views(),
-            "active_view": self._active_view,
             "revision": self._revision,
         }
 
@@ -227,7 +224,7 @@ class DownloadQueue:
             }
             if batch_id not in self._view_order:
                 self._view_order.append(batch_id)
-        self._emit_queue(active_view=batch_id)
+        self._emit_queue()
         threading.Thread(
             target=self._prepare_batch,
             args=(batch_id, dict(job_config)),
@@ -337,7 +334,7 @@ class DownloadQueue:
                 for _ in range(initial):
                     self._spawn_batch_entry_locked(batch_id)
             self._log("info", f"Queued {len(entries)} video(s) in \"{view_name}\".")
-            self._emit_queue(active_view=batch_id)
+            self._emit_queue()
             self._ensure_dispatcher()
         except BatchPrepareCancelled:
             with self._lock:
@@ -552,7 +549,6 @@ class DownloadQueue:
         if view_id == MAIN_VIEW_ID:
             return False
         removed = False
-        active_view: str | None = None
         with self._lock:
             if view_id not in self._views:
                 return False
@@ -576,11 +572,10 @@ class DownloadQueue:
             self._batches.pop(view_id, None)
             if self._active_view == view_id:
                 self._active_view = MAIN_VIEW_ID
-                active_view = MAIN_VIEW_ID
             self._refresh_main_view_status_locked()
             removed = True
         if removed:
-            self._emit_queue(active_view=active_view)
+            self._emit_queue()
         return removed
 
     def clear(self) -> int:

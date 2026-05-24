@@ -390,11 +390,6 @@ export async function removeQueueView(viewId) {
   try {
     const res = await apiCall("remove_queue_view", viewId);
     applyQueueState(res);
-    if (res.active_view) {
-      state.activeViewId = res.active_view;
-    } else if (!state.views.some((v) => v.id === state.activeViewId)) {
-      state.activeViewId = MAIN_VIEW_ID;
-    }
     updateQueueViewPicker();
     renderQueueList();
     log("info", t("log.queueViewRemoved"));
@@ -660,6 +655,39 @@ export async function handleCancelClearView() {
   }
 }
 
+function snapshotQueueUiState() {
+  return {
+    jobs: state.allJobs,
+    views: state.views,
+  };
+}
+
+function queueUiNeedsRefresh(prev, viewId = state.activeViewId || MAIN_VIEW_ID) {
+  const nextJobs = state.allJobs;
+  const nextViews = state.views;
+
+  const hadBatchViews = prev.views.some((v) => v.kind !== "main");
+  const hasBatchViews = nextViews.some((v) => v.kind !== "main");
+  if (hadBatchViews !== hasBatchViews) return true;
+
+  const prevView = prev.views.find((v) => v.id === viewId);
+  const nextView = nextViews.find((v) => v.id === viewId);
+  if (!nextView) return true;
+  if (JSON.stringify(prevView) !== JSON.stringify(nextView)) return true;
+
+  const jobSignature = (job) =>
+    `${job.id}:${job.status}:${JSON.stringify(job.progress || {})}`;
+  const prevActiveJobs = prev.jobs
+    .filter((j) => (j.view_id || MAIN_VIEW_ID) === viewId)
+    .map(jobSignature)
+    .join("|");
+  const nextActiveJobs = nextJobs
+    .filter((j) => (j.view_id || MAIN_VIEW_ID) === viewId)
+    .map(jobSignature)
+    .join("|");
+  return prevActiveJobs !== nextActiveJobs;
+}
+
 export function applyQueueState(data, revision) {
   const rev = revision ?? data?.revision;
   if (rev != null && rev < state.queueRevision) {
@@ -669,18 +697,21 @@ export function applyQueueState(data, revision) {
     state.queueRevision = rev;
   }
 
+  const prev = snapshotQueueUiState();
+  const prevActiveViewId = state.activeViewId;
+
   state.allJobs = data?.jobs || [];
   state.views = (data?.views || [{ id: MAIN_VIEW_ID, kind: "main" }]).map(normalizeView);
 
-  if (data?.active_view) {
-    state.activeViewId = data.active_view;
-  }
+  // Queue view selection is client-controlled (download click or picker), not backend pushes.
   if (!state.views.some((v) => v.id === state.activeViewId)) {
     state.activeViewId = MAIN_VIEW_ID;
   }
 
   updateQueueViewPicker();
-  renderQueueList();
+  if (prevActiveViewId !== state.activeViewId || queueUiNeedsRefresh(prev)) {
+    renderQueueList();
+  }
 }
 
 export function renderQueueList() {

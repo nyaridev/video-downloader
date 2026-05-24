@@ -15,7 +15,7 @@ import {
   setProgress,
   syncQueueLocalization,
   toggleQueueViewMenu,
-} from "./queue.js";
+} from "./queue.js?v=5";
 import {
   applyDownloadDefaults,
   applySettingsDefaults,
@@ -81,7 +81,7 @@ function init() {
       state.queueRevision = 0;
       state.views = [{ id: MAIN_VIEW_ID, name: t("queue.main"), kind: "main" }];
       state.activeViewId = MAIN_VIEW_ID;
-      applyQueueState({ jobs: [], views: state.views, active_view: MAIN_VIEW_ID, revision: 0 });
+      applyQueueState({ jobs: [], views: state.views, revision: 0 });
       log("info", t("log.readyOutput", { path: defaults.output_dir }));
     } catch (err) {
       log("error", err.message);
@@ -268,12 +268,15 @@ function init() {
       const config = readConfig();
       if (!config.url) throw new Error(t("log.enterUrl"));
       config.concurrency = getConcurrency();
+      const viewBeforeEnqueue = state.activeViewId;
       await saveAppSettings({ silent: true });
       const res = await apiCall("enqueue_download", config);
       applyQueueState(res);
       const isBatch = config.mode === "playlist" || config.mode === "channel";
-      if (isBatch && res.active_view) {
-        setActiveView(res.active_view);
+      if (isBatch) {
+        if (state.activeViewId === viewBeforeEnqueue) {
+          setActiveView(res.job_id);
+        }
       } else {
         setActiveView(MAIN_VIEW_ID);
       }
