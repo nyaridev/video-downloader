@@ -57,6 +57,7 @@ export default {
   "settings.themeMeta": "Meta",
   "settings.themeAnime": "Anime",
   "settings.themeTerminal": "Terminal",
+  "settings.themeWin95": "Windows 95",
   "settings.themeMode": "Theme mode",
   "settings.themeModeSystem": "System default",
   "settings.themeModeDark": "Dark",

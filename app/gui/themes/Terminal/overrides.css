@@ -244,3 +244,18 @@ html[data-theme="terminal"][data-color-scheme="light"] .download-btn:hover {
   background: var(--mode-idle);
   border-color: var(--border);
 }
+
+/* Pill toggles: instant snap (no sliding knob / track fade) */
+[data-theme="terminal"] .pill-track,
+[data-theme="terminal"] .pill-knob {
+  transition: none !important;
+}
+
+[data-theme="terminal"] .pill-switch,
+[data-theme="terminal"] .pill-switch * {
+  text-shadow: none;
+}
+
+[data-theme="terminal"] .pill-switch input:checked + .pill-track .pill-knob {
+  background: var(--on-accent);
+}

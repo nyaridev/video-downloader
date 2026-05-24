@@ -35,6 +35,12 @@ export const THEMES = {
     href: "themes/Terminal/theme.css",
     defaultColorScheme: "dark",
   },
+  win95: {
+    id: "win95",
+    label: "Windows 95",
+    href: "themes/Win95/theme.css",
+    defaultColorScheme: "light",
+  },
 };
 
 export const THEME_MODES = {

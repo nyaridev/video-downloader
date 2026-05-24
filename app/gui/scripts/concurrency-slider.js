@@ -2,8 +2,14 @@ import { $ } from "./dom.js";
 
 function concurrencySliderColors(hovered) {
   return hovered
-    ? { fill: "var(--accent-hover)", idle: "var(--surface-hover)" }
-    : { fill: "var(--accent)", idle: "var(--mode-idle)" };
+    ? {
+        fill: "var(--slider-fill-hover, var(--accent-hover))",
+        idle: "var(--slider-idle-hover, var(--surface-hover))",
+      }
+    : {
+        fill: "var(--slider-fill, var(--accent))",
+        idle: "var(--slider-idle, var(--mode-idle))",
+      };
 }
 
 export function paintConcurrencySlider(slider, value, { hovered } = {}) {

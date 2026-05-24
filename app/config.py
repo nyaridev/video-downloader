@@ -30,7 +30,7 @@ LEGACY_SETTINGS_FILE = ROOT / "settings.json"
 
 BROWSER_OPTIONS = ("edge", "firefox", "chrome", "brave", "chromium", "opera", "vivaldi")
 CHROMIUM_BROWSERS = frozenset({"chrome", "edge", "brave", "chromium", "opera", "vivaldi"})
-THEME_OPTIONS = ("default", "meta", "anime", "terminal")
+THEME_OPTIONS = ("default", "meta", "anime", "terminal", "win95")
 THEME_MODE_OPTIONS = ("system", "dark", "light")
 LANGUAGE_OPTIONS = ("en", "pl", "szl", "cs", "ja", "ko", "zh")
 

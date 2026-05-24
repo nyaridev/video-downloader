@@ -1,0 +1,592 @@
+/* ── Win95 system font & sizing ── */
+[data-theme="win95"] body,
+[data-theme="win95"] input,
+[data-theme="win95"] select,
+[data-theme="win95"] textarea,
+[data-theme="win95"] button,
+[data-theme="win95"] .custom-select-trigger,
+[data-theme="win95"] .custom-select-option {
+  font-family: var(--font-family);
+  font-size: 11px;
+}
+
+[data-theme="win95"] ::selection {
+  background: var(--win95-selection-bg);
+  color: var(--win95-selection-color);
+}
+
+/* ── Bevel utility classes via custom properties ── */
+[data-theme="win95"] {
+  --win95-outset: inset -1px -1px var(--win95-shadow), inset 1px 1px var(--win95-highlight);
+  --win95-inset: inset 1px 1px var(--win95-shadow), inset -1px -1px var(--win95-highlight);
+  --win95-outset-border: var(--win95-highlight) var(--win95-shadow) var(--win95-shadow) var(--win95-highlight);
+  --win95-inset-border: var(--win95-shadow) var(--win95-highlight) var(--win95-highlight) var(--win95-shadow);
+}
+
+/* ── Flat chrome: no radius, no modern shadows ── */
+[data-theme="win95"] .action-btn,
+[data-theme="win95"] .download-btn,
+[data-theme="win95"] .btn-sm,
+[data-theme="win95"] .url-input,
+[data-theme="win95"] .path-input,
+[data-theme="win95"] .number-input,
+[data-theme="win95"] .format-input,
+[data-theme="win95"] .custom-select-trigger,
+[data-theme="win95"] .console-pane,
+[data-theme="win95"] .console,
+[data-theme="win95"] .settings-section,
+[data-theme="win95"] .side-pane,
+[data-theme="win95"] .main-pane,
+[data-theme="win95"] .mode-btn,
+[data-theme="win95"] .toggle-card,
+[data-theme="win95"] .placeholder-group,
+[data-theme="win95"] .placeholder-notes,
+[data-theme="win95"] .tab-strip,
+[data-theme="win95"] .custom-select-menu,
+[data-theme="win95"] .context-menu,
+[data-theme="win95"] .tooltip-bubble {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ── Title bar — classic navy gradient caption ── */
+[data-theme="win95"] .win-titlebar {
+  height: 22px;
+  padding-left: 4px;
+  background: linear-gradient(90deg, var(--win95-titlebar-start), var(--win95-titlebar-end));
+  border-bottom: none;
+}
+
+[data-theme="win95"] .win-title-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+[data-theme="win95"] .window-controls {
+  height: 22px;
+}
+
+[data-theme="win95"] .win-btn {
+  width: 16px;
+  height: 14px;
+  margin: 2px 2px 0 0;
+  padding: 0;
+  background: var(--win95-face);
+  border: 1px solid;
+  border-color: var(--win95-outset-border);
+  color: #000000;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+[data-theme="win95"] .win-btn:hover {
+  background: var(--win95-face);
+  color: #000000;
+}
+
+[data-theme="win95"] .win-btn:active {
+  border-color: var(--win95-inset-border);
+  padding: 1px 0 0 1px;
+}
+
+[data-theme="win95"] .win-btn.win-close:hover {
+  background: var(--win95-face);
+  color: #000000;
+}
+
+[data-theme="win95"] .win-btn.win-close:active {
+  background: var(--win95-face);
+  color: #000000;
+}
+
+/* ── Main window frame — outset panel border ── */
+[data-theme="win95"] .main-pane,
+[data-theme="win95"] .side-pane,
+[data-theme="win95"] .console-pane {
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  background: var(--win95-face);
+}
+
+[data-theme="win95"] body.frameless .app {
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  background: var(--bg);
+}
+
+/* ── Tab strip — Win95 folder tabs ── */
+[data-theme="win95"] .tab-strip {
+  background: var(--win95-face);
+  border: none;
+  border-bottom: 2px solid;
+  border-bottom-color: var(--win95-shadow);
+  padding: 0 4px;
+  min-height: 24px;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+[data-theme="win95"] .page-tab {
+  padding: 3px 10px;
+  margin-bottom: -2px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  border-bottom: none;
+}
+
+[data-theme="win95"] .page-tab:hover {
+  color: var(--text);
+  background: var(--elevated);
+}
+
+[data-theme="win95"] .page-tab.active {
+  color: var(--text);
+  background: var(--win95-face);
+  border-color: var(--win95-outset-border);
+  border-bottom: 2px solid var(--win95-face);
+  margin-bottom: -2px;
+  font-weight: 700;
+}
+
+/* ── Raised buttons (outset) ── */
+[data-theme="win95"] .action-btn,
+[data-theme="win95"] .download-btn,
+[data-theme="win95"] .btn-sm,
+[data-theme="win95"] .mode-btn,
+[data-theme="win95"] .side-pane .queue-item-retry,
+[data-theme="win95"] .side-pane .queue-item-close {
+  background: var(--win95-face);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  font-weight: 400;
+  font-size: 11px;
+  transform: none;
+  transition: none;
+}
+
+[data-theme="win95"] .action-btn:hover,
+[data-theme="win95"] .download-btn:hover,
+[data-theme="win95"] .btn-sm:hover,
+[data-theme="win95"] .mode-btn:hover {
+  background: var(--win95-face);
+  color: var(--text);
+}
+
+[data-theme="win95"] .action-btn:active:not(:disabled):not(.is-installed),
+[data-theme="win95"] .download-btn:active:not(:disabled),
+[data-theme="win95"] .btn-sm:active:not(:disabled),
+[data-theme="win95"] .mode-btn:active:not(.active) {
+  border-color: var(--win95-inset-border);
+  transform: none;
+  opacity: 1;
+}
+
+[data-theme="win95"] .download-btn {
+  font-weight: 700;
+}
+
+[data-theme="win95"] .action-btn:disabled,
+[data-theme="win95"] .action-btn.is-installed,
+[data-theme="win95"] .download-btn:disabled {
+  color: var(--muted);
+  background: var(--win95-face);
+}
+
+/* Active / pressed mode button */
+[data-theme="win95"] .mode-btn.active {
+  background: var(--win95-face);
+  color: var(--text);
+  border-color: var(--win95-inset-border);
+  box-shadow: var(--win95-inset);
+}
+
+[data-theme="win95"] .mode-btn.active:hover {
+  background: var(--win95-face);
+  color: var(--text);
+}
+
+/* Default button focus — dotted outline */
+[data-theme="win95"] .download-btn:focus-visible,
+[data-theme="win95"] .action-btn:focus-visible,
+[data-theme="win95"] .btn-sm:focus-visible {
+  outline: 1px dotted #000000;
+  outline-offset: -4px;
+}
+
+html[data-theme="win95"][data-color-scheme="dark"] .download-btn:focus-visible,
+html[data-theme="win95"][data-color-scheme="dark"] .action-btn:focus-visible,
+html[data-theme="win95"][data-color-scheme="dark"] .btn-sm:focus-visible {
+  outline-color: #c0c0c0;
+}
+
+/* ── Sunken input fields ── */
+[data-theme="win95"] .url-input,
+[data-theme="win95"] .path-input,
+[data-theme="win95"] .format-input,
+[data-theme="win95"] .number-input,
+[data-theme="win95"] .custom-select-trigger {
+  background: var(--input-bg);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--win95-inset-border);
+  box-shadow: var(--win95-inset);
+  font-size: 11px;
+  padding: 4px 6px;
+}
+
+[data-theme="win95"] .url-input:focus,
+[data-theme="win95"] .path-input:focus,
+[data-theme="win95"] .format-input:focus,
+[data-theme="win95"] .number-input:focus,
+[data-theme="win95"] .custom-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--win95-inset-border);
+  box-shadow: var(--win95-inset);
+}
+
+[data-theme="win95"] .custom-select-trigger:hover {
+  background: var(--input-bg);
+  color: var(--text);
+  border-color: var(--win95-inset-border);
+}
+
+[data-theme="win95"] .custom-select.open .custom-select-trigger {
+  border-color: var(--win95-inset-border);
+  box-shadow: var(--win95-inset);
+}
+
+[data-theme="win95"] .custom-select-label {
+  color: var(--text);
+  font-weight: 400;
+}
+
+[data-theme="win95"] .custom-select-chevron {
+  border-top-color: var(--text);
+}
+
+/* ── Settings sections — grouped box ── */
+[data-theme="win95"] .settings-section {
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  padding: 8px;
+}
+
+[data-theme="win95"] .settings-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+[data-theme="win95"] .settings-disclosure {
+  background: var(--win95-face);
+  border: 1px solid var(--win95-shadow);
+}
+
+[data-theme="win95"] .placeholder-group {
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+}
+
+[data-theme="win95"] .placeholder-notes {
+  background: var(--input-bg);
+  border: 2px solid;
+  border-color: var(--win95-inset-border);
+}
+
+/* ── Console — sunken terminal area ── */
+[data-theme="win95"] .console-pane {
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+}
+
+[data-theme="win95"] .console {
+  background: var(--input-bg);
+  border: 2px solid;
+  border-color: var(--win95-inset-border);
+  font-family: "Fixedsys", "Courier New", monospace;
+  font-size: 11px;
+}
+
+[data-theme="win95"] .console-head .label-inline {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+/* ── Queue rows ── */
+[data-theme="win95"] .side-pane .queue-list {
+  gap: 4px;
+}
+
+[data-theme="win95"] .side-pane .queue-item {
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  border-left-width: 2px;
+  padding: 6px 8px;
+}
+
+[data-theme="win95"] .side-pane .queue-item--preparing:not(.queue-item--cancelled),
+[data-theme="win95"] .side-pane .queue-item--running,
+[data-theme="win95"] .side-pane .queue-item--combining {
+  border-left-color: var(--accent);
+}
+
+[data-theme="win95"] .side-pane .queue-item--done {
+  border-left-color: var(--success);
+}
+
+[data-theme="win95"] .side-pane .queue-item--error {
+  border-left-color: var(--error);
+}
+
+[data-theme="win95"] .side-pane .queue-status-badge {
+  border-radius: 0;
+  padding: 1px 4px;
+  background: var(--win95-face);
+  border: 1px solid;
+  border-color: var(--win95-outset-border);
+  font-size: 10px;
+}
+
+[data-theme="win95"] .side-pane .progress-wrap {
+  background: var(--input-bg);
+  border: 2px solid;
+  border-color: var(--win95-inset-border);
+  border-radius: 0;
+  height: 14px;
+}
+
+[data-theme="win95"] .side-pane .progress-bar {
+  border-radius: 0;
+  background: var(--accent);
+}
+
+[data-theme="win95"] .side-pane .item-tag {
+  border-radius: 0;
+  font-size: 10px;
+  border: 1px solid var(--win95-shadow);
+}
+
+/* ── Pill switch → Win95 checkbox feel ── */
+[data-theme="win95"] .pill-switch {
+  align-self: center;
+}
+
+[data-theme="win95"] .pill-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 0;
+  border: none;
+  background: var(--input-bg);
+  box-shadow: var(--win95-inset);
+  transition: none;
+}
+
+[data-theme="win95"] .pill-switch input:checked + .pill-track {
+  background: var(--input-bg);
+  box-shadow: var(--win95-inset);
+}
+
+[data-theme="win95"] .pill-knob {
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  border: 1px solid var(--win95-shadow);
+  box-shadow: none;
+  background: var(--win95-face);
+  transition: none;
+}
+
+[data-theme="win95"] .pill-switch input:checked + .pill-track .pill-knob {
+  transform: translateX(16px);
+  background: var(--accent);
+  border-color: var(--win95-dark-shadow);
+}
+
+/* ── Custom select dropdown ── */
+[data-theme="win95"] .custom-select-menu {
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  padding: 2px;
+  --custom-select-option-bg: var(--win95-face);
+  --custom-select-option-hover-bg: var(--win95-selection-bg);
+  --custom-select-option-active-bg: var(--win95-selection-bg);
+  --custom-select-option-active-hover-bg: var(--win95-selection-bg);
+}
+
+[data-theme="win95"] .custom-select-option {
+  border-radius: 0;
+}
+
+[data-theme="win95"] .custom-select-option-btn {
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 400;
+  padding: 4px 8px;
+  color: var(--text);
+}
+
+[data-theme="win95"] .custom-select-option-btn:hover {
+  background-color: var(--win95-selection-bg);
+  color: var(--win95-selection-color);
+}
+
+[data-theme="win95"] .custom-select-option.active .custom-select-option-btn {
+  background-color: var(--win95-selection-bg);
+  color: var(--win95-selection-color);
+}
+
+[data-theme="win95"] .custom-select-option.active .custom-select-option-btn:hover {
+  background-color: var(--win95-selection-bg);
+  color: var(--win95-selection-color);
+}
+
+[data-theme="win95"] .custom-select-option-remove {
+  border-radius: 0;
+  background-color: var(--win95-face);
+  color: var(--text);
+}
+
+[data-theme="win95"] .custom-select-option-remove:hover {
+  background-color: var(--menu-remove-hover-bg);
+  color: var(--menu-remove-hover-color);
+}
+
+/* ── Context menu ── */
+[data-theme="win95"] .context-menu {
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  padding: 2px;
+}
+
+[data-theme="win95"] .context-menu-item:hover,
+[data-theme="win95"] .context-menu-item:focus {
+  background: var(--win95-selection-bg);
+  color: var(--win95-selection-color);
+}
+
+/* ── Tooltips ── */
+[data-theme="win95"] .tooltip-bubble {
+  background: #ffffe1;
+  color: #000000;
+  border: 1px solid #000000;
+  font-size: 11px;
+}
+
+html[data-theme="win95"][data-color-scheme="dark"] .tooltip-bubble {
+  background: #1a2840;
+  color: #c0c0c0;
+  border-color: #4a5878;
+}
+
+/* ── Scrollbars — Win95 style ── */
+[data-theme="win95"] ::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme="win95"] ::-webkit-scrollbar-track {
+  background: var(--win95-face);
+  border: 1px solid var(--win95-shadow);
+}
+
+[data-theme="win95"] ::-webkit-scrollbar-thumb {
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+}
+
+[data-theme="win95"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--elevated);
+}
+
+[data-theme="win95"] ::-webkit-scrollbar-button {
+  background: var(--win95-face);
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  height: 16px;
+  width: 16px;
+}
+
+[data-theme="win95"] ::-webkit-scrollbar-corner {
+  background: var(--win95-face);
+}
+
+/* ── Toggle cards ── */
+[data-theme="win95"] .toggle-card {
+  background: transparent;
+  border: none;
+  min-height: 22px;
+  padding: 2px 0;
+}
+
+/* ── Concurrency slider ── */
+[data-theme="win95"] .concurrency-slider-rail {
+  border-radius: 0;
+  height: 4px;
+  border: 1px solid var(--win95-shadow);
+}
+
+[data-theme="win95"] .concurrency-slider::-webkit-slider-thumb {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  background: var(--win95-face);
+  box-shadow: none;
+}
+
+[data-theme="win95"] .concurrency-slider:hover::-webkit-slider-thumb {
+  background: var(--elevated);
+}
+
+[data-theme="win95"] .concurrency-slider::-moz-range-thumb {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: var(--win95-outset-border);
+  background: var(--win95-face);
+  box-shadow: none;
+}
+
+[data-theme="win95"] .concurrency-slider:hover::-moz-range-thumb {
+  background: var(--elevated);
+}
+
+/* ── Download pin area separator ── */
+[data-theme="win95"] .download-pin {
+  border-bottom: 2px solid var(--win95-shadow);
+  background: var(--win95-face);
+}
+
+/* ── Status / label text ── */
+[data-theme="win95"] .label-inline,
+[data-theme="win95"] .source-toggle-label {
+  font-size: 11px;
+}
+
+[data-theme="win95"] .source-toggle-label.active {
+  font-weight: 700;
+}
+
+/* ── Night shift desktop hint ── */
+html[data-theme="win95"][data-color-scheme="dark"] body.frameless .app-body,
+html[data-theme="win95"][data-color-scheme="dark"] .app-body {
+  background: var(--bg);
+}
+
+html[data-theme="win95"][data-color-scheme="light"] body.frameless .app-body,
+html[data-theme="win95"][data-color-scheme="light"] .app-body {
+  background: var(--bg);
+}

@@ -45,7 +45,6 @@ _COLOR_SCHEME_TAG_CANDIDATES: dict[str, tuple[str, ...]] = {
         "catgirl",
     ),
     "light": (
-        "blue_archive",
         "loli",
         "beach",
         "blue_sky",
