@@ -24,10 +24,12 @@ function fadeOverlayTransition(apply) {
 }
 
 /** Run `apply` with a cross-fade; resolves when the transition finishes. */
-export function runColorSchemeTransition(apply) {
-  if (typeof document.startViewTransition === "function") {
+export function runColorSchemeTransition(apply, { useViewTransition = true } = {}) {
+  if (useViewTransition && typeof document.startViewTransition === "function") {
     try {
-      const transition = document.startViewTransition(() => apply());
+      const transition = document.startViewTransition(() => {
+        apply();
+      });
       return transition.finished.catch(() => fadeOverlayTransition(apply));
     } catch {
       return fadeOverlayTransition(apply);

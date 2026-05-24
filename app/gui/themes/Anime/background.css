@@ -1,28 +1,47 @@
 html[data-theme="anime"],
 html[data-theme="anime"] body {
-  background: #000;
+  background-color: #000;
 }
 
 html[data-theme="anime"][data-color-scheme="dark"],
 html[data-theme="anime"][data-color-scheme="dark"] body {
-  background: #000;
+  background-color: #000;
 }
 
 html[data-theme="anime"][data-color-scheme="light"],
 html[data-theme="anime"][data-color-scheme="light"] body {
-  background: #fff;
+  background-color: #fff;
 }
 
 html[data-theme="anime"] body.frameless {
-  background: #000;
+  background-color: #000;
 }
 
 html[data-theme="anime"][data-color-scheme="dark"] body.frameless {
-  background: #000;
+  background-color: #000;
 }
 
 html[data-theme="anime"][data-color-scheme="light"] body.frameless {
-  background: #fff;
+  background-color: #fff;
+}
+
+html[data-theme="anime"].anime-scheme-transitioning,
+html[data-theme="anime"].anime-scheme-transitioning body,
+html[data-theme="anime"].anime-scheme-transitioning .anime-background,
+html[data-theme="anime"].anime-scheme-transitioning .anime-background__base {
+  transition: background-color 3.5s ease-in-out;
+}
+
+html[data-theme="anime"].anime-scheme-transitioning .anime-background__layer {
+  transition:
+    opacity 3.5s ease-in-out,
+    background-color 3.5s ease-in-out;
+}
+
+html[data-theme="anime"].anime-scheme-transitioning .anime-background__media {
+  transition:
+    background-color 3.5s ease-in-out,
+    filter 0.5s cubic-bezier(0.45, 0.05, 0.55, 0.95);
 }
 
 html[data-theme="anime"] body.frameless .app {
@@ -40,26 +59,26 @@ html[data-theme="anime"] .app-body {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: #000;
+  background-color: #000;
 }
 
 html[data-theme="anime"][data-color-scheme="dark"] .anime-background {
-  background: #000;
+  background-color: #000;
 }
 
 html[data-theme="anime"][data-color-scheme="light"] .anime-background {
-  background: #fff;
+  background-color: #fff;
 }
 
 .anime-background__base {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: #000;
+  background-color: #000;
 }
 
 html[data-theme="anime"][data-color-scheme="light"] .anime-background__base {
-  background: #fff;
+  background-color: #fff;
 }
 
 .anime-background__dim {
@@ -73,8 +92,7 @@ html[data-theme="anime"][data-color-scheme="light"] .anime-background__base {
 }
 
 .anime-background--loading .anime-background__dim,
-.anime-background--loading .anime-background__scrim,
-.anime-background--loading .anime-background__layer {
+.anime-background--loading .anime-background__scrim {
   transition: none !important;
 }
 
@@ -101,14 +119,14 @@ html[data-theme="anime"][data-color-scheme="dark"] .anime-background__scrim {
   inset: -2%;
   z-index: 1;
   overflow: hidden;
-  background: #000;
+  background-color: #000;
   filter: blur(5px);
   transition: filter 0.5s cubic-bezier(0.45, 0.05, 0.55, 0.95);
   will-change: filter;
 }
 
 html[data-theme="anime"][data-color-scheme="light"] .anime-background__media {
-  background: #fff;
+  background-color: #fff;
 }
 
 html[data-theme="anime"].app-inactive .anime-background__media {
@@ -122,7 +140,7 @@ html[data-theme="anime"].app-inactive .anime-background__media {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  background: #000;
+  background-color: #000;
   opacity: 0;
   transform: scale(1.03);
   transition: opacity 3.5s ease-in-out;
@@ -130,15 +148,11 @@ html[data-theme="anime"].app-inactive .anime-background__media {
 }
 
 html[data-theme="anime"][data-color-scheme="light"] .anime-background__layer {
-  background: #fff;
+  background-color: #fff;
 }
 
 .anime-background__layer.is-visible {
   opacity: 1;
-}
-
-.anime-background__layer.is-visible.is-instant {
-  transition: none;
 }
 
 html[data-theme="anime"] .app {

@@ -38,6 +38,10 @@ function waitForLayerImage(layer, url) {
   });
 }
 
+function nextFrame() {
+  return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
 class AnimeBackgroundController {
   constructor() {
     this.root = null;
@@ -49,6 +53,7 @@ class AnimeBackgroundController {
     this.rotateTimer = null;
     this.retryTimer = null;
     this.transitioning = false;
+    this.schemeBusy = false;
     this.running = false;
   }
 
@@ -153,38 +158,34 @@ class AnimeBackgroundController {
     const activeLayer = this.getActiveLayer();
     const inactiveLayer = this.getInactiveLayer();
     const hasVisible = this.hasVisibleLayer();
-    const instantReveal = !crossfade || !hasVisible;
 
     if (!crossfade || !hasVisible) {
-      inactiveLayer.classList.remove("is-visible", "is-instant");
+      inactiveLayer.classList.remove("is-visible");
       inactiveLayer.removeAttribute("src");
 
-      activeLayer.classList.remove("is-visible", "is-instant");
+      activeLayer.classList.remove("is-visible");
       await waitForLayerImage(activeLayer, imageUrl);
 
       if (!this.running) return;
 
-      activeLayer.classList.add("is-visible");
-      if (instantReveal) activeLayer.classList.add("is-instant");
-      syncAdaptiveContrast(activeLayer, { instant: contrastInstant });
       this.finishBoot();
-
-      if (instantReveal) {
-        requestAnimationFrame(() => activeLayer.classList.remove("is-instant"));
-      }
+      await nextFrame();
+      activeLayer.classList.add("is-visible");
+      syncAdaptiveContrast(activeLayer, { instant: contrastInstant });
       return;
     }
 
-    inactiveLayer.classList.remove("is-visible", "is-instant");
+    inactiveLayer.classList.remove("is-visible");
     await waitForLayerImage(inactiveLayer, imageUrl);
 
     if (!this.running) return;
 
+    this.finishBoot();
+    await nextFrame();
     inactiveLayer.classList.add("is-visible");
     activeLayer.classList.remove("is-visible");
     this.activeIsA = !this.activeIsA;
     syncAdaptiveContrast(inactiveLayer, { instant: contrastInstant });
-    this.finishBoot();
     window.setTimeout(() => {
       if (!this.running) return;
       this.getInactiveLayer().removeAttribute("src");
@@ -214,7 +215,37 @@ class AnimeBackgroundController {
 
   /** Preload a scheme-tagged image, then crossfade UI + wallpaper together. */
   async transitionToColorScheme(colorScheme) {
-    if (!this.running || this.transitioning) return;
+    if (!this.running || this.schemeBusy) return;
+
+    this.schemeBusy = true;
+    const root = document.documentElement;
+    const wallpaperPromise = this.swapSchemeWallpaper(colorScheme);
+    const commit = () => {
+      root.dataset.colorScheme = colorScheme;
+      if (colorScheme === "light") seedAnimeLightGlass();
+    };
+
+    root.classList.add("anime-scheme-transitioning");
+    try {
+      commit();
+      await runColorSchemeTransition(() => {}, { useViewTransition: false });
+      await new Promise((resolve) => setTimeout(resolve, FADE_MS));
+      await nextFrame();
+      resyncAnimeContrastFromDom({ instant: false });
+      await wallpaperPromise;
+    } finally {
+      root.classList.remove("anime-scheme-transitioning");
+      this.schemeBusy = false;
+    }
+  }
+
+  async swapSchemeWallpaper(colorScheme) {
+    if (!this.running) return;
+
+    while (this.transitioning) {
+      await new Promise((resolve) => setTimeout(resolve, 32));
+      if (!this.running) return;
+    }
 
     this.transitioning = true;
     try {
@@ -223,20 +254,11 @@ class AnimeBackgroundController {
 
       if (!this.running) return;
 
-      const crossfade = this.hasVisibleLayer();
-      const apply = async () => {
-        document.documentElement.dataset.colorScheme = colorScheme;
-        if (colorScheme === "light") seedAnimeLightGlass();
-        await this.showImage(imageUrl, { crossfade, contrastInstant: false });
-      };
-
-      if (crossfade) {
-        await runColorSchemeTransition(apply);
-      } else {
-        await apply();
-      }
+      await this.showImage(imageUrl, {
+        crossfade: this.hasVisibleLayer(),
+        contrastInstant: false,
+      });
     } catch {
-      document.documentElement.dataset.colorScheme = colorScheme;
       this.scheduleRetry();
     } finally {
       this.transitioning = false;
