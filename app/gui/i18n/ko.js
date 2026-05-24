@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "기본",
   "settings.themeMeta": "Meta",
   "settings.themeAnime": "애니메",
+  "settings.themeTerminal": "터미널",
   "settings.themeMode": "테마 모드",
   "settings.themeModeSystem": "시스템 기본값",
   "settings.themeModeDark": "다크",

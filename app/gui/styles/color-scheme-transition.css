@@ -25,3 +25,23 @@ html[data-color-scheme="light"] .color-scheme-overlay {
 html[data-color-scheme="light"] .color-scheme-overlay.is-active {
   opacity: 0.28;
 }
+
+/*
+ * Non-anime themes: snap palette on light/dark toggle. Only animate motion/layout
+ * properties; colors/backgrounds/borders follow CSS variables instantly.
+ * Anime uses .anime-scheme-transitioning for its own cross-fade instead.
+ */
+html:not([data-theme="anime"]) *,
+html:not([data-theme="anime"]) *::before,
+html:not([data-theme="anime"]) *::after {
+  transition-property: transform, opacity, width, height, max-height, min-height !important;
+}
+
+/* Fallback while JS applies a scheme change (anime non-animated path, etc.). */
+html.color-scheme-instant,
+html.color-scheme-instant *,
+html.color-scheme-instant *::before,
+html.color-scheme-instant *::after {
+  transition: none !important;
+  animation: none !important;
+}

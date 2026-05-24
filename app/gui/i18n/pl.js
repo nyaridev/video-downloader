@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "Domyślny",
   "settings.themeMeta": "Meta",
   "settings.themeAnime": "Anime",
+  "settings.themeTerminal": "Terminal",
   "settings.themeMode": "Tryb motywu",
   "settings.themeModeSystem": "Domyślny systemu",
   "settings.themeModeDark": "Ciemny",

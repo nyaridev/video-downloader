@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "默认",
   "settings.themeMeta": "Meta",
   "settings.themeAnime": "动漫",
+  "settings.themeTerminal": "终端",
   "settings.themeMode": "主题模式",
   "settings.themeModeSystem": "跟随系统",
   "settings.themeModeDark": "深色",

@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "Výchozí",
   "settings.themeMeta": "Meta",
   "settings.themeAnime": "Anime",
+  "settings.themeTerminal": "Terminal",
   "settings.themeMode": "Režim motivu",
   "settings.themeModeSystem": "Podle systému",
   "settings.themeModeDark": "Tmavý",

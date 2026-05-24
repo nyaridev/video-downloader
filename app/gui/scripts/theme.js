@@ -29,6 +29,12 @@ export const THEMES = {
     href: "themes/Anime/theme.css",
     defaultColorScheme: "dark",
   },
+  terminal: {
+    id: "terminal",
+    label: "Terminal",
+    href: "themes/Terminal/theme.css",
+    defaultColorScheme: "dark",
+  },
 };
 
 export const THEME_MODES = {
@@ -76,6 +82,14 @@ function applyColorScheme(scheme) {
   document.documentElement.dataset.colorScheme = scheme;
 }
 
+function commitColorSchemeInstant(commit) {
+  const root = document.documentElement;
+  root.classList.add("color-scheme-instant");
+  commit();
+  void root.offsetHeight;
+  root.classList.remove("color-scheme-instant");
+}
+
 /** @param {{ animate?: boolean }} [options] */
 export async function applyThemeMode(themeMode, themeId, { animate = false } = {}) {
   const id = normalizeThemeId(themeId ?? readThemeFromForm());
@@ -84,7 +98,9 @@ export async function applyThemeMode(themeMode, themeId, { animate = false } = {
   const scheme = resolveColorScheme(mode, id);
   if (scheme === previousScheme) return;
 
-  if (animate && id === "anime" && document.documentElement.dataset.theme === "anime") {
+  const shouldAnimate = animate && id === "anime";
+
+  if (shouldAnimate && document.documentElement.dataset.theme === "anime") {
     await transitionAnimeColorScheme(scheme);
     return;
   }
@@ -93,16 +109,16 @@ export async function applyThemeMode(themeMode, themeId, { animate = false } = {
     applyColorScheme(scheme);
     if (id === "anime") {
       if (scheme === "light") seedAnimeLightGlass();
-      resyncAnimeContrastFromDom({ instant: !animate });
+      resyncAnimeContrastFromDom({ instant: !shouldAnimate });
     }
   };
 
-  if (animate) {
+  if (shouldAnimate) {
     await runColorSchemeTransition(commit);
     return;
   }
 
-  commit();
+  commitColorSchemeInstant(commit);
 }
 
 function themeHref(themeId) {

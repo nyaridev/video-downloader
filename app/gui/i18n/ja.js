@@ -56,6 +56,7 @@ export default {
   "settings.themeDefault": "デフォルト",
   "settings.themeMeta": "Meta",
   "settings.themeAnime": "アニメ",
+  "settings.themeTerminal": "ターミナル",
   "settings.themeMode": "テーマモード",
   "settings.themeModeSystem": "システム設定に従う",
   "settings.themeModeDark": "ダーク",

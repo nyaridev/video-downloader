@@ -1,0 +1,246 @@
+/* Monospace everywhere */
+[data-theme="terminal"] body,
+[data-theme="terminal"] input,
+[data-theme="terminal"] select,
+[data-theme="terminal"] textarea,
+[data-theme="terminal"] button,
+[data-theme="terminal"] .custom-select-trigger,
+[data-theme="terminal"] .custom-select-option {
+  font-family: var(--font-family);
+  letter-spacing: 0.02em;
+}
+
+/* Flat, sharp terminal chrome */
+[data-theme="terminal"] .action-btn,
+[data-theme="terminal"] .download-btn,
+[data-theme="terminal"] .btn-sm,
+[data-theme="terminal"] .url-input,
+[data-theme="terminal"] .path-input,
+[data-theme="terminal"] .number-input,
+[data-theme="terminal"] .format-input,
+[data-theme="terminal"] .custom-select-trigger,
+[data-theme="terminal"] .console-pane,
+[data-theme="terminal"] .console,
+[data-theme="terminal"] .settings-section,
+[data-theme="terminal"] .side-pane,
+[data-theme="terminal"] .mode-btn,
+[data-theme="terminal"] .toggle-card,
+[data-theme="terminal"] .placeholder-group,
+[data-theme="terminal"] .placeholder-notes {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Phosphor glow on dark mode */
+html[data-theme="terminal"][data-color-scheme="dark"] .app-body {
+  text-shadow: 0 0 1px rgba(57, 255, 20, 0.15);
+}
+
+html[data-theme="terminal"][data-color-scheme="dark"] .console .log-line {
+  text-shadow: 0 0 4px rgba(57, 255, 20, 0.25);
+}
+
+/* Subtle CRT scanlines */
+[data-theme="terminal"] .app-body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.04) 2px,
+    rgba(0, 0, 0, 0.04) 4px
+  );
+  z-index: 9999;
+}
+
+html[data-theme="terminal"][data-color-scheme="light"] .app-body::after {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.02) 2px,
+    rgba(0, 0, 0, 0.02) 4px
+  );
+}
+
+/* Block-style focus rings */
+[data-theme="terminal"] .url-input:focus,
+[data-theme="terminal"] .path-input:focus,
+[data-theme="terminal"] .format-input:focus,
+[data-theme="terminal"] .number-input:focus,
+[data-theme="terminal"] .custom-select-trigger:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+html[data-theme="terminal"][data-color-scheme="dark"] .url-input,
+html[data-theme="terminal"][data-color-scheme="dark"] .path-input,
+html[data-theme="terminal"][data-color-scheme="dark"] .format-input,
+html[data-theme="terminal"][data-color-scheme="dark"] .number-input {
+  caret-color: var(--accent);
+}
+
+/* Tab bar — CLI command-line feel */
+[data-theme="terminal"] .page-tab {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+[data-theme="terminal"] .page-tab.active {
+  border-bottom: 2px solid var(--accent);
+  color: var(--accent);
+}
+
+[data-theme="terminal"] .page-tab.active::before {
+  content: "> ";
+  opacity: 0.7;
+}
+
+/* Console pane — native terminal block */
+[data-theme="terminal"] .console-pane {
+  border: 2px solid var(--border);
+}
+
+html[data-theme="terminal"][data-color-scheme="dark"] .console {
+  background: #000000;
+  border-color: var(--border);
+}
+
+html[data-theme="terminal"][data-color-scheme="light"] .console {
+  background: #faf7f0;
+  border-color: var(--border);
+}
+
+[data-theme="terminal"] .console-head .label-inline::before {
+  content: "$ ";
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Buttons — inverted terminal style */
+[data-theme="terminal"] .download-btn,
+[data-theme="terminal"] .action-btn {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+html[data-theme="terminal"][data-color-scheme="dark"] .download-btn {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+html[data-theme="terminal"][data-color-scheme="dark"] .download-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+html[data-theme="terminal"][data-color-scheme="light"] .download-btn {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+html[data-theme="terminal"][data-color-scheme="light"] .download-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Queue rows — bordered blocks */
+[data-theme="terminal"] .side-pane .queue-list {
+  gap: 4px;
+}
+
+[data-theme="terminal"] .side-pane .queue-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-left-color: var(--border-hover);
+  border-radius: 0;
+  padding: 8px 10px;
+}
+
+[data-theme="terminal"] .side-pane .queue-item--preparing:not(.queue-item--cancelled) {
+  border-left-color: var(--accent);
+}
+
+[data-theme="terminal"] .side-pane .queue-item--running,
+[data-theme="terminal"] .side-pane .queue-item--combining {
+  border-left-color: var(--accent);
+}
+
+[data-theme="terminal"] .side-pane .queue-item--done {
+  border-left-color: var(--success);
+}
+
+[data-theme="terminal"] .side-pane .queue-item--error {
+  border-left-color: var(--error);
+}
+
+[data-theme="terminal"] .side-pane .queue-status-badge {
+  border-radius: 0;
+  padding: 2px 6px;
+  background: var(--mode-idle);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="terminal"] .side-pane .progress-wrap {
+  background: var(--input-bg);
+  border-radius: 0;
+  border: 1px solid var(--border);
+}
+
+[data-theme="terminal"] .side-pane .progress-bar {
+  border-radius: 0;
+}
+
+[data-theme="terminal"] .side-pane .item-tag {
+  border-radius: 0;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+[data-theme="terminal"] .side-pane .queue-item-retry,
+[data-theme="terminal"] .side-pane .queue-item-close {
+  border-radius: 0;
+}
+
+/* Settings sections */
+[data-theme="terminal"] .settings-section {
+  border: 1px solid var(--border);
+}
+
+[data-theme="terminal"] .settings-section-title {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+}
+
+[data-theme="terminal"] .settings-section-title::before {
+  content: "# ";
+  color: var(--muted);
+}
+
+[data-theme="terminal"] .url-input,
+[data-theme="terminal"] .path-input,
+[data-theme="terminal"] .custom-select-trigger,
+[data-theme="terminal"] .number-input {
+  background: var(--input-bg);
+}
+
+[data-theme="terminal"] .settings-section .path-input,
+[data-theme="terminal"] .settings-section .format-input,
+[data-theme="terminal"] .settings-section .custom-select-trigger,
+[data-theme="terminal"] .settings-section .btn-sm {
+  background: var(--mode-idle);
+  border-color: var(--border);
+}
